@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A.I Learning — Project Portfolio</title>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --bg: #0f172a;
+            --surface: #1e293b;
+            --surface-hover: #334155;
+            --text: #e2e8f0;
+            --text-muted: #94a3b8;
+            --accent-1: #818cf8;
+            --accent-2: #34d399;
+            --accent-3: #fbbf24;
+            --accent-4: #f472b6;
+            --accent-5: #22d3ee;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            text-align: center;
+            padding: 4rem 2rem;
+            background: linear-gradient(135deg, var(--bg) 0%, #1a1a2e 50%, var(--bg) 100%);
+            border-bottom: 1px solid var(--surface);
+        }
+
+        header h1 {
+            font-size: 3rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--accent-1), var(--accent-5));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+        }
+
+        header p {
+            color: var(--text-muted);
+            font-size: 1.2rem;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .projects-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 1.5rem;
+            margin-top: 3rem;
+        }
+
+        .project-card {
+            background: var(--surface);
+            border-radius: 16px;
+            padding: 2rem;
+            border: 1px solid transparent;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .project-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            border-radius: 16px 16px 0 0;
+        }
+
+        .project-card:nth-child(1)::before { background: var(--accent-1); }
+        .project-card:nth-child(2)::before { background: var(--accent-2); }
+        .project-card:nth-child(3)::before { background: var(--accent-3); }
+        .project-card:nth-child(4)::before { background: var(--accent-4); }
+        .project-card:nth-child(5)::before { background: var(--accent-5); }
+        .project-card:nth-child(6)::before { background: linear-gradient(90deg, var(--accent-1), var(--accent-5)); }
+
+        .project-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .project-number {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+        }
+
+        .project-card h3 {
+            font-size: 1.3rem;
+            margin-bottom: 0.75rem;
+            color: var(--text);
+        }
+
+        .project-card p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .topics {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .topic-tag {
+            background: rgba(99, 102, 241, 0.15);
+            color: var(--accent-1);
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .card-links {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .card-links a {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+
+        .btn-learn {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-learn:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-project {
+            background: rgba(99, 102, 241, 0.1);
+            color: var(--accent-1);
+            border: 1px solid var(--primary);
+        }
+
+        .btn-project:hover {
+            background: rgba(99, 102, 241, 0.2);
+        }
+
+        .learning-path {
+            margin-top: 4rem;
+            text-align: center;
+        }
+
+        .learning-path h2 {
+            font-size: 2rem;
+            margin-bottom: 2rem;
+            color: var(--text);
+        }
+
+        .path-steps {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .path-step {
+            background: var(--surface);
+            padding: 0.75rem 1.5rem;
+            border-radius: 30px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-muted);
+        }
+
+        .path-arrow {
+            color: var(--primary);
+            font-size: 1.2rem;
+        }
+
+        footer {
+            text-align: center;
+            padding: 3rem 2rem;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            border-top: 1px solid var(--surface);
+            margin-top: 4rem;
+        }
+
+        footer a {
+            color: var(--accent-1);
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 768px) {
+            header h1 { font-size: 2rem; }
+            .projects-grid { grid-template-columns: 1fr; }
+            .container { padding: 1rem; }
+            .path-steps { flex-direction: column; }
+            .path-arrow { transform: rotate(90deg); }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>🤖 A.I Learning</h1>
+        <p>A hands-on journey through modern AI — from LLM foundations to multimodal generation agents.</p>
+    </header>
+
+    <div class="container">
+        <div class="projects-grid">
+            <!-- Project 1 -->
+            <div class="project-card">
+                <div class="project-number">Project 1</div>
+                <h3>Build an LLM Playground</h3>
+                <p>Understand how large language models work from the ground up — pre-training, post-training, and text generation.</p>
+                <div class="topics">
+                    <span class="topic-tag">Transformers</span>
+                    <span class="topic-tag">Tokenization</span>
+                    <span class="topic-tag">RLHF</span>
+                    <span class="topic-tag">Text Generation</span>
+                </div>
+                <div class="card-links">
+                    <a href="../project-1-llm-playground/README.md" class="btn-learn">📖 Learn</a>
+                    <a href="../project-1-llm-playground/PROJECT.md" class="btn-project">🛠️ Build</a>
+                </div>
+            </div>
+
+            <!-- Project 2 -->
+            <div class="project-card">
+                <div class="project-number">Project 2</div>
+                <h3>RAG Customer Support Chatbot</h3>
+                <p>Build a chatbot that retrieves relevant documents and generates accurate answers using RAG and prompt engineering.</p>
+                <div class="topics">
+                    <span class="topic-tag">RAG</span>
+                    <span class="topic-tag">Embeddings</span>
+                    <span class="topic-tag">Prompt Engineering</span>
+                    <span class="topic-tag">Vector DB</span>
+                </div>
+                <div class="card-links">
+                    <a href="../project-2-rag-chatbot/README.md" class="btn-learn">📖 Learn</a>
+                    <a href="../project-2-rag-chatbot/PROJECT.md" class="btn-project">🛠️ Build</a>
+                </div>
+            </div>
+
+            <!-- Project 3 -->
+            <div class="project-card">
+                <div class="project-number">Project 3</div>
+                <h3>Ask-the-Web Agent</h3>
+                <p>Create a Perplexity-like agent that searches the web, reasons about findings, and answers with citations.</p>
+                <div class="topics">
+                    <span class="topic-tag">Agents</span>
+                    <span class="topic-tag">Tool Calling</span>
+                    <span class="topic-tag">ReACT</span>
+                    <span class="topic-tag">MCP</span>
+                </div>
+                <div class="card-links">
+                    <a href="../project-3-web-agent/README.md" class="btn-learn">📖 Learn</a>
+                    <a href="../project-3-web-agent/PROJECT.md" class="btn-project">🛠️ Build</a>
+                </div>
+            </div>
+
+            <!-- Project 4 -->
+            <div class="project-card">
+                <div class="project-number">Project 4</div>
+                <h3>Deep Research System</h3>
+                <p>Build a system that performs iterative research using reasoning models, Tree of Thoughts, and web search.</p>
+                <div class="topics">
+                    <span class="topic-tag">Reasoning</span>
+                    <span class="topic-tag">Tree of Thoughts</span>
+                    <span class="topic-tag">CoT</span>
+                    <span class="topic-tag">Local LLMs</span>
+                </div>
+                <div class="card-links">
+                    <a href="../project-4-deep-research/README.md" class="btn-learn">📖 Learn</a>
+                    <a href="../project-4-deep-research/PROJECT.md" class="btn-project">🛠️ Build</a>
+                </div>
+            </div>
+
+            <!-- Project 5 -->
+            <div class="project-card">
+                <div class="project-number">Project 5</div>
+                <h3>Multi-modal Generation Agent</h3>
+                <p>Generate images and videos from text using diffusion models — from Stable Diffusion to video generation.</p>
+                <div class="topics">
+                    <span class="topic-tag">Diffusion</span>
+                    <span class="topic-tag">Text-to-Image</span>
+                    <span class="topic-tag">Text-to-Video</span>
+                    <span class="topic-tag">VAE</span>
+                </div>
+                <div class="card-links">
+                    <a href="../project-5-multimodal-agent/README.md" class="btn-learn">📖 Learn</a>
+                    <a href="../project-5-multimodal-agent/PROJECT.md" class="btn-project">🛠️ Build</a>
+                </div>
+            </div>
+
+            <!-- Capstone -->
+            <div class="project-card">
+                <div class="project-number">Capstone</div>
+                <h3>Ship a Portfolio-Ready AI Project</h3>
+                <p>Combine techniques from all projects to build and demo your own AI application from idea to deployment.</p>
+                <div class="topics">
+                    <span class="topic-tag">Full Stack AI</span>
+                    <span class="topic-tag">Portfolio</span>
+                    <span class="topic-tag">Demo Day</span>
+                </div>
+                <div class="card-links">
+                    <a href="../capstone/README.md" class="btn-learn">📖 Guide</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="learning-path">
+            <h2>Learning Path</h2>
+            <div class="path-steps">
+                <span class="path-step">1. LLM Foundations</span>
+                <span class="path-arrow">→</span>
+                <span class="path-step">2. RAG & Prompting</span>
+                <span class="path-arrow">→</span>
+                <span class="path-step">3. Agents & Tools</span>
+                <span class="path-arrow">→</span>
+                <span class="path-step">4. Reasoning</span>
+                <span class="path-arrow">→</span>
+                <span class="path-step">5. Multimodal</span>
+                <span class="path-arrow">→</span>
+                <span class="path-step">🎓 Capstone</span>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>Built with ❤️ for learning AI | <a href="https://github.com/amwaleh/A.I-learning">GitHub Repository</a></p>
+    </footer>
+</body>
+</html>
