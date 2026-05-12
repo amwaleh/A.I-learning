@@ -1,0 +1,30 @@
+# Dependencies
+progress-tracker/frontend/node_modules/
+progress-tracker/backend/venv/
+progress-tracker/backend/__pycache__/
+progress-tracker/backend/app/__pycache__/
+progress-tracker/backend/app/routers/__pycache__/
+
+# Build output
+progress-tracker/frontend/dist/
+
+# Database
+*.db
+*.db-journal
+
+# Environment
+.env
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
