@@ -10,10 +10,10 @@ const statusIcons = {
   completed: CheckCircle2,
 };
 
-export default function TopicItem({ topic, onStatusChange, depth = 0 }) {
+export default function TopicItem({ topic, onStatusChange, onSelect, selectedTopicId, depth = 0 }) {
   const [expanded, setExpanded] = useState(true);
   const [updating, setUpdating] = useState(false);
-  const hasChildren = topic.sub_topics && topic.sub_topics.length > 0;
+  const hasChildren = topic.children && topic.children.length > 0;
   const Icon = statusIcons[topic.status] || Circle;
 
   const handleStatusChange = async (newStatus) => {
@@ -66,7 +66,15 @@ export default function TopicItem({ topic, onStatusChange, depth = 0 }) {
           />
         </button>
 
-        <span className="flex-1 text-sm text-slate-200">{topic.title}</span>
+        <button
+          onClick={() => onSelect(topic)}
+          className={`flex-1 text-sm text-left transition-colors
+            ${selectedTopicId === topic.id
+              ? 'text-indigo-400 font-medium'
+              : 'text-slate-200 hover:text-indigo-300'}`}
+        >
+          {topic.title}
+        </button>
 
         <select
           value={topic.status}
@@ -86,11 +94,13 @@ export default function TopicItem({ topic, onStatusChange, depth = 0 }) {
 
       {hasChildren && expanded && (
         <div className="mt-1">
-          {topic.sub_topics.map((sub) => (
+          {topic.children.map((sub) => (
             <TopicItem
               key={sub.id}
               topic={sub}
               onStatusChange={onStatusChange}
+              onSelect={onSelect}
+              selectedTopicId={selectedTopicId}
               depth={depth + 1}
             />
           ))}

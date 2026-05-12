@@ -22,6 +22,7 @@ class TokenResponse(BaseModel):
     access_token: str
     refresh_token: str
     token_type: str = "bearer"
+    user: "UserResponse | None" = None
 
 
 class AccessTokenResponse(BaseModel):
@@ -44,6 +45,7 @@ class TopicResponse(BaseModel):
     title: str
     parent_topic_id: int | None = None
     status: str = "not_started"
+    content: str | None = None
     children: list["TopicResponse"] = []
 
     model_config = {"from_attributes": True}

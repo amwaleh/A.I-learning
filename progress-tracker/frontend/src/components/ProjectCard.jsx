@@ -41,9 +41,9 @@ export default function ProjectCard({ project }) {
           <span>
             {project.completed_topics} / {project.total_topics} topics
           </span>
-          <span>{project.percentage}%</span>
+          <span>{project.progress_percentage}%</span>
         </div>
-        <ProgressBar percentage={project.percentage} showLabel={false} size="sm" />
+        <ProgressBar percentage={project.progress_percentage} showLabel={false} size="sm" />
       </div>
     </button>
   );

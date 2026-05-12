@@ -26,6 +26,7 @@ def _build_topic_tree(
                     title=t.title,
                     parent_topic_id=t.parent_topic_id,
                     status=progress_map.get(t.id, "not_started"),
+                    content=t.content,
                     children=children,
                 )
             )
@@ -111,4 +112,35 @@ async def get_project_topics(
         title=project.title,
         description=project.description,
         topics=tree,
+    )
+
+
+@router.get("/topics/{topic_id}")
+async def get_topic_detail(
+    topic_id: int,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(select(Topic).where(Topic.id == topic_id))
+    topic = result.scalar_one_or_none()
+    if not topic:
+        raise HTTPException(status_code=404, detail="Topic not found")
+
+    # Get user progress
+    progress_result = await db.execute(
+        select(UserProgress).where(
+            UserProgress.user_id == user.id,
+            UserProgress.topic_id == topic_id,
+        )
+    )
+    progress = progress_result.scalar_one_or_none()
+    status = progress.status.value if progress else "not_started"
+
+    return TopicResponse(
+        id=topic.id,
+        title=topic.title,
+        parent_topic_id=topic.parent_topic_id,
+        status=status,
+        content=topic.content,
+        children=[],
     )

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import client from '../api/client';
 import TopicItem from '../components/TopicItem';
+import TopicContent from '../components/TopicContent';
 import ProgressBar from '../components/ProgressBar';
 import { ArrowLeft, Loader2, BookOpen } from 'lucide-react';
 import { calcPercentage } from '../utils/helpers';
@@ -12,6 +13,7 @@ export default function ProjectDetail() {
   const [project, setProject] = useState(null);
   const [topics, setTopics] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedTopic, setSelectedTopic] = useState(null);
 
   const fetchData = async () => {
     try {
@@ -21,7 +23,7 @@ export default function ProjectDetail() {
       ]);
       const proj = projRes.data.find((p) => String(p.id) === String(id));
       setProject(proj);
-      setTopics(topicsRes.data);
+      setTopics(topicsRes.data.topics || []);
     } catch (err) {
       console.error('Failed to load project:', err);
     } finally {
@@ -40,7 +42,7 @@ export default function ProjectDetail() {
       const updateTopicStatus = (items) =>
         items.map((t) => {
           if (t.id === topicId) return { ...t, status: newStatus };
-          if (t.sub_topics) return { ...t, sub_topics: updateTopicStatus(t.sub_topics) };
+          if (t.children?.length) return { ...t, children: updateTopicStatus(t.children) };
           return t;
         });
       setTopics(updateTopicStatus(topics));
@@ -103,9 +105,9 @@ export default function ProjectDetail() {
             <span>
               {project.completed_topics} of {project.total_topics} topics completed
             </span>
-            <span>{project.percentage}%</span>
+            <span>{project.progress_percentage}%</span>
           </div>
-          <ProgressBar percentage={project.percentage} showLabel={false} size="md" />
+          <ProgressBar percentage={project.progress_percentage} showLabel={false} size="md" />
         </div>
       </div>
 
@@ -117,11 +119,25 @@ export default function ProjectDetail() {
         ) : (
           <div className="divide-y divide-slate-700/30">
             {topics.map((topic) => (
-              <TopicItem key={topic.id} topic={topic} onStatusChange={handleStatusChange} />
+              <TopicItem
+                key={topic.id}
+                topic={topic}
+                onStatusChange={handleStatusChange}
+                onSelect={(topic) => setSelectedTopic(topic)}
+                selectedTopicId={selectedTopic?.id}
+              />
             ))}
           </div>
         )}
       </div>
+
+      {selectedTopic && (
+        <TopicContent
+          topicId={selectedTopic.id}
+          topicTitle={selectedTopic.title}
+          onClose={() => setSelectedTopic(null)}
+        />
+      )}
     </div>
   );
 }

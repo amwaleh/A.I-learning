@@ -47,10 +47,13 @@ async def register(
     )
     db.add(user)
     await db.flush()
+    await db.commit()
+    await db.refresh(user)
 
     return TokenResponse(
         access_token=create_access_token(user.id),
         refresh_token=create_refresh_token(user.id),
+        user=UserResponse.model_validate(user),
     )
 
 
@@ -72,6 +75,7 @@ async def login(
     return TokenResponse(
         access_token=create_access_token(user.id),
         refresh_token=create_refresh_token(user.id),
+        user=UserResponse.model_validate(user),
     )
 
 

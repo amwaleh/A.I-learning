@@ -57,6 +57,7 @@ class Topic(Base):
     project_id = Column(Integer, ForeignKey("projects.id"), nullable=False)
     title = Column(String(255), nullable=False)
     parent_topic_id = Column(Integer, ForeignKey("topics.id"), nullable=True)
+    content = Column(Text, nullable=True)
 
     project = relationship("Project", back_populates="topics")
     children = relationship("Topic", backref="parent", remote_side=[id], lazy="selectin")
