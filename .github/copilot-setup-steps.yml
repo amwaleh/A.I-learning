@@ -1,0 +1,7 @@
+# Copilot Cloud Agent Setup Steps
+# This file configures the environment for GitHub Copilot coding agent.
+
+setup-steps:
+  - name: Setup environment
+    run: |
+      echo "Environment ready for Copilot agent"
