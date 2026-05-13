@@ -1,12 +1,10 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { X, Loader2, PartyPopper } from 'lucide-react';
 import client from '../api/client';
 import MermaidBlock from './MermaidBlock';
 import CheckpointButton from './CheckpointButton';
-import ProgressIndicator from './ProgressIndicator';
-import useScrollProgress from '../hooks/useScrollProgress';
 
 export default function TopicContent({ topicId, topicTitle, onClose, fullHeight = false, onStatusChange }) {
   const [content, setContent] = useState(null);
@@ -14,14 +12,11 @@ export default function TopicContent({ topicId, topicTitle, onClose, fullHeight 
   const [checkpoints, setCheckpoints] = useState([]);
   const [status, setStatus] = useState('not_started');
   const [showCompleted, setShowCompleted] = useState(false);
-  const { scrollPercent, timeSpent, containerRef, reset } = useScrollProgress();
-  const lastReportedRef = useRef({ scroll: 0, time: 0 });
 
   // Fetch content and checkpoints
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
-      reset();
       try {
         const [contentRes, cpRes] = await Promise.all([
           client.get(`/projects/topics/${topicId}`),
@@ -38,7 +33,7 @@ export default function TopicContent({ topicId, topicTitle, onClose, fullHeight 
       }
     };
     fetchData();
-  }, [topicId, reset]);
+  }, [topicId]);
 
   // Handle status transition — show celebration before notifying parent
   const handleStatusTransition = useCallback((newStatus) => {
@@ -46,7 +41,6 @@ export default function TopicContent({ topicId, topicTitle, onClose, fullHeight 
     setStatus(newStatus);
     if (newStatus === 'completed') {
       setShowCompleted(true);
-      // Notify parent after user sees the confirmation (3s)
       setTimeout(() => {
         onStatusChange?.(topicId, newStatus);
       }, 3000);
@@ -55,38 +49,18 @@ export default function TopicContent({ topicId, topicTitle, onClose, fullHeight 
     }
   }, [status, topicId, onStatusChange]);
 
-  // Auto-progress reporting (debounced — every 10% scroll or 10s)
-  useEffect(() => {
-    if (status === 'completed' || loading) return;
-
-    const { scroll: lastScroll, time: lastTime } = lastReportedRef.current;
-    const scrollDelta = Math.abs(scrollPercent - lastScroll);
-    const timeDelta = timeSpent - lastTime;
-
-    if (scrollDelta < 10 && timeDelta < 10) return;
-
-    lastReportedRef.current = { scroll: scrollPercent, time: timeSpent };
-
-    client.patch(`/projects/topics/${topicId}/auto-progress`, {
-      scroll_percent: scrollPercent,
-      time_spent: timeSpent,
-    }).then((res) => {
-      handleStatusTransition(res.data.status);
-    }).catch(() => {});
-  }, [scrollPercent, timeSpent, topicId, status, loading, handleStatusTransition]);
-
   const handleCheckpointConfirm = useCallback((cpNumber) => {
     setCheckpoints(prev =>
       prev.map(cp => cp.checkpoint_number === cpNumber ? { ...cp, confirmed: true } : cp)
     );
-    // Trigger a progress check after confirming
+    // Check completion via API (pass scroll/time as met since user confirmed)
     client.patch(`/projects/topics/${topicId}/auto-progress`, {
-      scroll_percent: scrollPercent,
-      time_spent: timeSpent,
+      scroll_percent: 100,
+      time_spent: 30,
     }).then((res) => {
       handleStatusTransition(res.data.status);
     }).catch(() => {});
-  }, [topicId, scrollPercent, timeSpent, handleStatusTransition]);
+  }, [topicId, handleStatusTransition]);
 
   // Parse checkpoint markers from content
   const renderContent = (rawContent) => {
@@ -115,7 +89,7 @@ export default function TopicContent({ topicId, topicTitle, onClose, fullHeight 
       </div>
 
       {/* Scrollable content */}
-      <div ref={containerRef} className="flex-1 overflow-y-auto px-6 py-5">
+      <div className="flex-1 overflow-y-auto px-6 py-5">
         {loading ? (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="w-6 h-6 text-indigo-500 animate-spin" />
@@ -183,15 +157,12 @@ export default function TopicContent({ topicId, topicTitle, onClose, fullHeight 
         )}
       </div>
 
-      {/* Floating progress indicator */}
-      {!loading && content && (
-        <ProgressIndicator
-          scrollPercent={scrollPercent}
-          timeSpent={timeSpent}
-          checkpointsTotal={checkpoints.length}
-          checkpointsConfirmed={confirmedCount}
-          status={status}
-        />
+      {/* Checkpoint progress summary */}
+      {!loading && content && checkpoints.length > 0 && (
+        <div className="flex items-center gap-3 px-4 py-2.5 bg-slate-900/80 border-t border-slate-800 text-sm text-slate-400">
+          <span>{confirmedCount}/{checkpoints.length} checkpoints confirmed</span>
+          {status === 'completed' && <span className="text-emerald-400 font-medium">✓ Complete</span>}
+        </div>
       )}
 
       {/* Completion overlay */}
