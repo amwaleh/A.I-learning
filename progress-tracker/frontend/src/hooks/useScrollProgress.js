@@ -10,7 +10,6 @@ export default function useScrollProgress() {
   const [timeSpent, setTimeSpent] = useState(0);
   const startTimeRef = useRef(Date.now());
   const timerRef = useRef(null);
-  const maxScrollRef = useRef(0);
 
   const handleScroll = useCallback(() => {
     const el = containerRef.current;
@@ -19,16 +18,11 @@ export default function useScrollProgress() {
     const { scrollTop, scrollHeight, clientHeight } = el;
     const maxScroll = scrollHeight - clientHeight;
     if (maxScroll <= 0) {
-      maxScrollRef.current = 100;
       setScrollPercent(100);
       return;
     }
     const percent = Math.min(100, Math.round((scrollTop / maxScroll) * 100));
-    // High-water mark — never decrease
-    if (percent > maxScrollRef.current) {
-      maxScrollRef.current = percent;
-      setScrollPercent(percent);
-    }
+    setScrollPercent(percent);
   }, []);
 
   useEffect(() => {
@@ -54,7 +48,6 @@ export default function useScrollProgress() {
   }, []);
 
   const reset = useCallback(() => {
-    maxScrollRef.current = 0;
     setScrollPercent(0);
     setTimeSpent(0);
     startTimeRef.current = Date.now();
