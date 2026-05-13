@@ -10,11 +10,12 @@ const statusIcons = {
   completed: CheckCircle2,
 };
 
-export default function TopicItem({ topic, onStatusChange, onSelect, selectedTopicId, depth = 0 }) {
-  const [expanded, setExpanded] = useState(true);
+export default function TopicItem({ topic, onStatusChange, onSelect, selectedTopicId, depth = 0, compact = false }) {
+  const [expanded, setExpanded] = useState(depth === 0);
   const [updating, setUpdating] = useState(false);
   const hasChildren = topic.children && topic.children.length > 0;
   const Icon = statusIcons[topic.status] || Circle;
+  const isSelected = selectedTopicId === topic.id;
 
   const handleStatusChange = async (newStatus) => {
     if (newStatus === topic.status || updating) return;
@@ -31,6 +32,72 @@ export default function TopicItem({ topic, onStatusChange, onSelect, selectedTop
     const nextIdx = (currentIdx + 1) % statusOptions.length;
     handleStatusChange(statusOptions[nextIdx]);
   };
+
+  if (compact) {
+    return (
+      <div className={depth > 0 ? 'ml-4 border-l border-slate-700/40 pl-2' : ''}>
+        <div
+          className={`flex items-center gap-2 py-1.5 px-2 rounded-md cursor-pointer transition-colors text-sm
+                      ${isSelected
+                        ? 'bg-indigo-500/15 text-indigo-300'
+                        : 'text-slate-300 hover:bg-slate-800/60 hover:text-slate-100'}
+                      ${updating ? 'opacity-50' : ''}`}
+        >
+          {hasChildren ? (
+            <button
+              onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}
+              className="text-slate-500 hover:text-slate-300 flex-shrink-0"
+            >
+              {expanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+            </button>
+          ) : (
+            <span className="w-3.5 flex-shrink-0" />
+          )}
+
+          <button
+            onClick={(e) => { e.stopPropagation(); cycleStatus(); }}
+            disabled={updating}
+            className="flex-shrink-0 hover:scale-110 transition-transform"
+            title={statusLabel(topic.status)}
+          >
+            <Icon
+              className={`w-4 h-4 ${
+                topic.status === 'completed'
+                  ? 'text-emerald-400'
+                  : topic.status === 'in_progress'
+                  ? 'text-amber-400'
+                  : 'text-slate-600'
+              }`}
+            />
+          </button>
+
+          <button
+            onClick={() => onSelect(topic)}
+            className="flex-1 text-left truncate text-sm"
+            title={topic.title}
+          >
+            {topic.title}
+          </button>
+        </div>
+
+        {hasChildren && expanded && (
+          <div className="mt-0.5">
+            {topic.children.map((sub) => (
+              <TopicItem
+                key={sub.id}
+                topic={sub}
+                onStatusChange={onStatusChange}
+                onSelect={onSelect}
+                selectedTopicId={selectedTopicId}
+                depth={depth + 1}
+                compact
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className={depth > 0 ? 'ml-6 border-l border-slate-700/50 pl-4' : ''}>

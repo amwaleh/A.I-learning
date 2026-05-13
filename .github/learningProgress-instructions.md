@@ -36,14 +36,67 @@ Build a full-stack web app that lets learners track their progress through the A
 ### 4. Topic Learning Content ⭐ NEW
 - **Every topic and sub-topic MUST have rich markdown learning content** (200–500 words each)
 - Content is stored in the `content` TEXT column on the Topic model
-- Clicking a topic title opens a content panel below the topic list
+- Clicking a topic title in the sidebar loads content in the main content area
 - Content is rendered as formatted markdown with:
   - Syntax-highlighted code blocks (Python examples)
   - Tables, bullet lists, and ASCII diagrams
   - Headers, bold/italic formatting
   - GFM (GitHub Flavored Markdown) support
-- Content panel has a close button and highlights the selected topic
+- Content panel has a close button and highlights the selected topic in the sidebar
 - Use `@tailwindcss/typography` plugin for prose styling in dark theme
+
+## UI Layout & Design Considerations
+
+### Project Detail Page — Split Panel Layout
+
+The project detail page uses a **sidebar + content** layout pattern (similar to documentation sites like MDN, Docusaurus, or VS Code's explorer):
+
+```
+┌──────────────────────────────────────────────────────────┐
+│  ← Back    Project Title              12/20 topics  60% │  ← Compact header bar
+├────────────────┬─────────────────────────────────────────┤
+│ TOPICS         │                                         │
+│                │   Topic Content                         │
+│ ● Pre-Training │   (Markdown rendered here)              │
+│   ○ Tokeniza… │                                         │
+│   ◐ Embeddi…  │   ## Pre-Training                       │
+│ ● Fine-Tuning │   Pre-training is the foundational...   │
+│   ● LoRA      │                                         │
+│   ○ QLoRA     │   ### Key Concepts                      │
+│               │   - Next-token prediction                │
+│ [◀ Collapse]  │   - Masked language modeling             │
+│               │   ```python                              │
+│               │   model = AutoModelForCausalLM(...)      │
+│               │   ```                                    │
+└────────────────┴─────────────────────────────────────────┘
+     320px fixed          Flex-1 (fills remaining space)
+```
+
+### Design Decisions
+
+| Decision | Rationale |
+|----------|-----------|
+| **Collapsible left sidebar** (320px) | Topics stay visible for navigation without leaving content. Sidebar can collapse to 48px icon strip for more reading space. |
+| **Full viewport height** (`calc(100vh - 10rem)`) | Both panels fill the screen — no vertical scrolling of the page itself, only within each panel independently. |
+| **Independent scroll areas** | Topic tree and content area scroll independently, so deep topic trees don't push content offscreen. |
+| **Compact topic items in sidebar** | Smaller padding, truncated text, no dropdown — optimized for scanning a long list. Status icon click-to-cycle is retained. |
+| **Compact header bar** | Project title, progress bar, and back button in a single row — maximizes space for the split panels. |
+| **Empty state placeholder** | When no topic is selected, the content area shows an icon + instructional text instead of blank space. |
+| **Highlighted active topic** | The selected topic in the sidebar gets `bg-indigo-500/15 text-indigo-300` to show which content is displayed. |
+| **Wider max-width** (`max-w-screen-2xl`) | Layout container is wider than default to give the split-panel more room on large screens. |
+| **Smooth sidebar transition** | `transition-all duration-300` on sidebar width for polished collapse/expand animation. |
+| **Sub-topics collapsed by default** | Only top-level topics are expanded initially — child topics start collapsed to reduce visual noise. Root topics (`depth=0`) expand on load. |
+
+### Component Responsibilities
+
+- **`ProjectDetail.jsx`** — Orchestrates the split layout. Manages `selectedTopic` and `sidebarCollapsed` state. Passes `compact` prop to TopicItem for sidebar rendering.
+- **`TopicItem.jsx`** — Dual-mode component:
+  - `compact={true}` (sidebar): Smaller text, truncated titles, no dropdown selector, tighter spacing
+  - `compact={false}` (default): Original full-width layout with dropdown status selector
+- **`TopicContent.jsx`** — Dual-mode component:
+  - `fullHeight={true}` (split panel): Fills parent height, sticky header, scrollable content
+  - `fullHeight={false}` (default): Card-style with margin-top, for standalone use
+- **`Layout.jsx`** — App shell with top nav, uses `max-w-screen-2xl` for wider content area
 
 ### 5. Overall Progress Summary
 - Dashboard header showing overall curriculum completion (e.g., "42% complete")
