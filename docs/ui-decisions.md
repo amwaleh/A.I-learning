@@ -15,14 +15,20 @@
 - Overall completion header with streak counter
 
 ### Project Detail (`ProjectDetail.jsx`) — Split Panel
-```
-┌──────────────────────────────────────────────────────────┐
-│  ← Back    Project Title              12/20 topics  60% │
-├────────────────┬─────────────────────────────────────────┤
-│ TOPICS (320px) │  Content Area (flex-1)                  │
-│ Collapsible    │  Scrollable markdown                    │
-│ sidebar        │  or empty state placeholder             │
-└────────────────┴─────────────────────────────────────────┘
+
+```mermaid
+graph LR
+    subgraph Header["Compact Header Bar"]
+        Back["← Back"] --- Title["Project Title"] --- Progress["12/20 · 60%"]
+    end
+
+    subgraph Split["Split Panel (full viewport height)"]
+        Sidebar["Sidebar (320px)<br/>Collapsible topic tree<br/>Compact TopicItems"]
+        Content["Content Area (flex-1)<br/>Scrollable markdown<br/>or empty state"]
+    end
+
+    Header --> Split
+    Sidebar ---|"click topic"| Content
 ```
 - Sidebar collapses to 48px icon strip
 - Both panels scroll independently, full viewport height
