@@ -4,31 +4,20 @@
 
 An AI agent that works like Perplexity AI — you ask a question, it searches the web, reads multiple sources, and gives you a synthesized answer with citations.
 
-```
-┌─────────────────────────────────────────────────────────┐
-│                                                          │
-│  You: "What are the latest developments in fusion       │
-│        energy in 2024?"                                  │
-│                                                          │
-│  Agent:                                                  │
-│    [Thinking] I need to search for recent fusion news    │
-│    [Action]   Searching: "fusion energy developments     │
-│               2024"                                      │
-│    [Thinking] Let me get more specific info...           │
-│    [Action]   Searching: "NIF fusion breakthrough 2024"  │
-│    [Answer]                                              │
-│                                                          │
-│    Recent fusion energy developments include:            │
-│    • NIF achieved ignition again in [1]                  │
-│    • Private companies raised $X billion [2]             │
-│    • New tokamak designs announced [3]                   │
-│                                                          │
-│    Sources:                                              │
-│    [1] https://example.com/fusion-news                   │
-│    [2] https://example.com/fusion-funding                │
-│    [3] https://example.com/tokamak-2024                  │
-│                                                          │
-└─────────────────────────────────────────────────────────┘
+```mermaid
+sequenceDiagram
+    participant User
+    participant Agent
+    participant Web as Web Search
+
+    User->>Agent: "What are the latest developments in fusion energy in 2024?"
+    Agent->>Agent: [Thinking] I need to search for recent fusion news
+    Agent->>Web: Search: "fusion energy developments 2024"
+    Web-->>Agent: Results...
+    Agent->>Agent: [Thinking] Let me get more specific info...
+    Agent->>Web: Search: "NIF fusion breakthrough 2024"
+    Web-->>Agent: Results...
+    Agent->>User: Recent fusion energy developments include:<br/>• NIF achieved ignition again [1]<br/>• Private companies raised $X billion [2]<br/>• New tokamak designs announced [3]
 ```
 
 ---

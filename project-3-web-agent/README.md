@@ -20,18 +20,14 @@ An **agent** is a program that uses an LLM (Large Language Model) to decide what
 
 Think of it like this:
 
-```
-┌─────────────────────────────────────────────────────┐
-│                    COMPARISON                         │
-├─────────────────────────────────────────────────────┤
-│                                                      │
-│  Plain LLM:     Question ──► Answer                  │
-│                                                      │
-│  Agent:         Question ──► Think ──► Act ──►       │
-│                              Think ──► Act ──►       │
-│                              Think ──► Answer        │
-│                                                      │
-└─────────────────────────────────────────────────────┘
+```mermaid
+graph LR
+    subgraph "Plain LLM"
+        Q1[Question] --> A1[Answer]
+    end
+    subgraph Agent
+        Q2[Question] --> T1[Think] --> Act1[Act] --> T2[Think] --> Act2[Act] --> T3[Think] --> A2[Answer]
+    end
 ```
 
 ### LLM vs. Agent vs. Agentic System
@@ -42,47 +38,38 @@ Think of it like this:
 | **Agent** | LLM + tools + decision loop | A bot that searches the web then answers |
 | **Agentic System** | Multiple agents working together | One agent researches, another writes, a third reviews |
 
-```
-┌────────────────────────────────────────────────────────────┐
-│                                                            │
-│   LLM (Brain only)                                         │
-│   ┌──────────┐                                            │
-│   │  Model   │  "I think the answer is..."                │
-│   └──────────┘                                            │
-│                                                            │
-│   Agent (Brain + Hands)                                    │
-│   ┌──────────┐     ┌──────────┐                          │
-│   │  Model   │────►│  Tools   │  Can actually DO things   │
-│   └──────────┘     └──────────┘                          │
-│        │                 │                                 │
-│        └─────────────────┘                                │
-│              Loop until done                               │
-│                                                            │
-│   Agentic System (Team)                                    │
-│   ┌─────────┐  ┌─────────┐  ┌─────────┐                │
-│   │ Agent 1 │──│ Agent 2 │──│ Agent 3 │                 │
-│   └─────────┘  └─────────┘  └─────────┘                │
-│   Researcher    Writer        Reviewer                    │
-│                                                            │
-└────────────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    subgraph "LLM (Brain only)"
+        M1[Model] -. "I think the answer is..." .-> M1
+    end
+    subgraph "Agent (Brain + Hands)"
+        M2[Model] -->|calls| T2[Tools]
+        T2 -->|results| M2
+        M2 -.->|"Loop until done"| M2
+    end
+    subgraph "Agentic System (Team)"
+        A1["Agent 1\nResearcher"] --- A2["Agent 2\nWriter"] --- A3["Agent 3\nReviewer"]
+    end
 ```
 
 ### Levels of Agency
 
 Agency exists on a spectrum — from fully scripted workflows to fully autonomous agents:
 
-```
-Low Agency                                          High Agency
-────────────────────────────────────────────────────────────►
-
-┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────────┐
-│ Workflow │  │ Router   │  │ ReACT    │  │ Autonomous   │
-│ (fixed   │  │ (picks a │  │ (thinks  │  │ (plans and   │
-│  steps)  │  │  path)   │  │  + acts) │  │  self-corrects│
-└──────────┘  └──────────┘  └──────────┘  └──────────────┘
-
-Human controls              Agent controls
-every step                  its own actions
+```mermaid
+graph LR
+    subgraph Low Agency
+        W["Workflow\n(fixed steps)"]
+        R["Router\n(picks a path)"]
+    end
+    subgraph High Agency
+        RE["ReACT\n(thinks + acts)"]
+        AU["Autonomous\n(plans and\nself-corrects)"]
+    end
+    W --> R --> RE --> AU
+    HC["Human controls\nevery step"] -.-> W
+    AU -.-> AC["Agent controls\nits own actions"]
 ```
 
 **Key Insight:** More agency = more flexibility, but also more risk of errors. Start simple and add agency only when needed.
@@ -97,14 +84,9 @@ Workflows are **pre-defined patterns** for how an LLM processes information. The
 
 Run one LLM call, then feed its output into the next call.
 
-```
-┌─────────┐     ┌─────────┐     ┌─────────┐
-│ Step 1  │────►│ Step 2  │────►│ Step 3  │
-│ Research│     │ Outline │     │ Write   │
-└─────────┘     └─────────┘     └─────────┘
-   Output 1        Output 2        Final
-   feeds into      feeds into      result
-   Step 2          Step 3
+```mermaid
+graph LR
+    S1["Step 1\nResearch"] -->|"Output 1\nfeeds into Step 2"| S2["Step 2\nOutline"] -->|"Output 2\nfeeds into Step 3"| S3["Step 3\nWrite\n(Final result)"]
 ```
 
 **Example: Summarize then Translate**
@@ -137,19 +119,12 @@ french_summary = response2.choices[0].message.content
 
 The LLM decides which path to take based on the input.
 
-```
-                    ┌─────────────┐
-                    │   Router    │
-                    │  (classifies│
-                    │   input)    │
-                    └──────┬──────┘
-                           │
-              ┌────────────┼────────────┐
-              ▼            ▼            ▼
-        ┌──────────┐ ┌──────────┐ ┌──────────┐
-        │ Path A:  │ │ Path B:  │ │ Path C:  │
-        │ Simple Q │ │ Research │ │ Creative │
-        └──────────┘ └──────────┘ └──────────┘
+```mermaid
+graph TD
+    R["Router\n(classifies input)"]
+    R --> A["Path A:\nSimple Q"]
+    R --> B["Path B:\nResearch"]
+    R --> C["Path C:\nCreative"]
 ```
 
 **Example:**
@@ -190,23 +165,14 @@ Run multiple LLM calls at the same time for speed or better results.
 
 #### Sectioning (split work)
 
-```
-              ┌─────────────┐
-              │   Input     │
-              └──────┬──────┘
-                     │
-         ┌───────────┼───────────┐
-         ▼           ▼           ▼
-   ┌──────────┐ ┌──────────┐ ┌──────────┐
-   │ Worker 1 │ │ Worker 2 │ │ Worker 3 │
-   │ (Part A) │ │ (Part B) │ │ (Part C) │
-   └──────┬───┘ └──────┬───┘ └──────┬───┘
-         │           │           │
-         └───────────┼───────────┘
-                     ▼
-              ┌─────────────┐
-              │  Combine    │
-              └─────────────┘
+```mermaid
+graph TD
+    I[Input] --> W1["Worker 1\n(Part A)"]
+    I --> W2["Worker 2\n(Part B)"]
+    I --> W3["Worker 3\n(Part C)"]
+    W1 --> C[Combine]
+    W2 --> C
+    W3 --> C
 ```
 
 **Example:** Analyze a document from 3 angles simultaneously:
@@ -264,15 +230,10 @@ async def vote_on_answer(question, num_votes=3):
 
 The LLM reviews and improves its own output.
 
-```
-┌──────────┐     ┌──────────┐     ┌──────────┐
-│ Generate │────►│ Critique │────►│ Improve  │
-│ (draft)  │     │ (review) │     │ (revise) │
-└──────────┘     └──────────┘     └──────────┘
-                      │                 │
-                      └─────────────────┘
-                       Can loop multiple
-                       times until good
+```mermaid
+graph LR
+    G["Generate\n(draft)"] --> C["Critique\n(review)"] --> I["Improve\n(revise)"]
+    I -->|"Loop until good"| C
 ```
 
 **Example:**
@@ -323,27 +284,14 @@ def generate_with_reflection(task, max_iterations=3):
 
 A central "orchestrator" LLM breaks down work and delegates to workers.
 
-```
-                ┌─────────────────┐
-                │  Orchestrator   │
-                │ (plans & assigns│
-                │  subtasks)      │
-                └────────┬────────┘
-                         │
-            ┌────────────┼────────────┐
-            ▼            ▼            ▼
-      ┌──────────┐ ┌──────────┐ ┌──────────┐
-      │ Worker 1 │ │ Worker 2 │ │ Worker 3 │
-      │ (subtask)│ │ (subtask)│ │ (subtask)│
-      └──────┬───┘ └──────┬───┘ └──────┬───┘
-            │            │            │
-            └────────────┼────────────┘
-                         ▼
-                ┌─────────────────┐
-                │  Orchestrator   │
-                │ (combines       │
-                │  results)       │
-                └─────────────────┘
+```mermaid
+graph TD
+    O1["Orchestrator\n(plans & assigns subtasks)"] --> W1["Worker 1\n(subtask)"]
+    O1 --> W2["Worker 2\n(subtask)"]
+    O1 --> W3["Worker 3\n(subtask)"]
+    W1 --> O2["Orchestrator\n(combines results)"]
+    W2 --> O2
+    W3 --> O2
 ```
 
 **Example:**
@@ -392,26 +340,19 @@ def orchestrator(complex_question):
 
 Tool calling lets an LLM **request the use of external functions**. The LLM doesn't run the tool itself — it tells your program *which* tool to call and *what arguments* to pass.
 
-```
-┌─────────────────────────────────────────────────────────┐
-│                  TOOL CALLING FLOW                        │
-│                                                          │
-│  1. User asks: "What's the weather in Tokyo?"            │
-│                                                          │
-│  2. LLM thinks: "I need the weather tool"                │
-│     LLM outputs: {                                       │
-│       "tool": "get_weather",                             │
-│       "arguments": {"city": "Tokyo"}                     │
-│     }                                                    │
-│                                                          │
-│  3. YOUR CODE runs: get_weather("Tokyo")                 │
-│     Result: "72°F, sunny"                                │
-│                                                          │
-│  4. You send result back to LLM                          │
-│                                                          │
-│  5. LLM responds: "It's 72°F and sunny in Tokyo!"       │
-│                                                          │
-└─────────────────────────────────────────────────────────┘
+```mermaid
+sequenceDiagram
+    participant User
+    participant LLM
+    participant Code as Your Code
+    participant Tool as get_weather()
+
+    User->>LLM: "What's the weather in Tokyo?"
+    LLM->>Code: tool: "get_weather", args: {city: "Tokyo"}
+    Code->>Tool: get_weather("Tokyo")
+    Tool-->>Code: "72°F, sunny"
+    Code->>LLM: Result: "72°F, sunny"
+    LLM->>User: "It's 72°F and sunny in Tokyo!"
 ```
 
 **Key Insight:** The LLM decides WHAT to do. Your code does the actual work.
@@ -525,29 +466,20 @@ def call_function(name, args):
 
 MCP is a **standardized way** to connect LLMs to external tools and data sources. Think of it as a "USB port" for AI — any tool that speaks MCP can plug into any LLM that supports it.
 
-```
-┌─────────────────────────────────────────────────────────┐
-│                                                          │
-│  WITHOUT MCP:                                            │
-│  Each LLM has custom integrations                        │
-│                                                          │
-│  LLM A ──custom code──► Tool 1                          │
-│  LLM A ──custom code──► Tool 2                          │
-│  LLM B ──custom code──► Tool 1  (rewrite!)              │
-│  LLM B ──custom code──► Tool 2  (rewrite!)              │
-│                                                          │
-│  WITH MCP:                                               │
-│  Standard protocol, write once                           │
-│                                                          │
-│  LLM A ──MCP──┐                                         │
-│               ├──► MCP Server (Tool 1)                  │
-│  LLM B ──MCP──┘                                         │
-│                                                          │
-│  LLM A ──MCP──┐                                         │
-│               ├──► MCP Server (Tool 2)                  │
-│  LLM B ──MCP──┘                                         │
-│                                                          │
-└─────────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    subgraph "WITHOUT MCP"
+        LA1["LLM A"] -->|custom code| T1a["Tool 1"]
+        LA2["LLM A"] -->|custom code| T2a["Tool 2"]
+        LB1["LLM B"] -->|"custom code (rewrite!)"| T1b["Tool 1"]
+        LB2["LLM B"] -->|"custom code (rewrite!)"| T2b["Tool 2"]
+    end
+    subgraph "WITH MCP"
+        LA["LLM A"] -->|MCP| S1["MCP Server\n(Tool 1)"]
+        LB["LLM B"] -->|MCP| S1
+        LA3["LLM A"] -->|MCP| S2["MCP Server\n(Tool 2)"]
+        LB3["LLM B"] -->|MCP| S2
+    end
 ```
 
 **MCP Components:**
@@ -571,20 +503,9 @@ Multi-step agents can **plan and execute multiple actions** autonomously. They d
 
 ### 4.1 Planning Autonomy
 
-```
-┌──────────────────────────────────────────────────────┐
-│           PLANNING SPECTRUM                            │
-│                                                       │
-│  Fixed Plan          Adaptive Plan       No Plan      │
-│  ──────────────────────────────────────────────────  │
-│                                                       │
-│  "Do steps           "Plan first,        "Figure it  │
-│   1, 2, 3"           adjust as you go"    out as     │
-│                                           you go"    │
-│                                                       │
-│  Workflows           ReWOO               ReACT       │
-│                                                       │
-└──────────────────────────────────────────────────────┘
+```mermaid
+graph LR
+    FP["Fixed Plan\n'Do steps 1, 2, 3'\n(Workflows)"] --- AP["Adaptive Plan\n'Plan first,\nadjust as you go'\n(ReWOO)"] --- NP["No Plan\n'Figure it out\nas you go'\n(ReACT)"]
 ```
 
 ---
@@ -593,45 +514,14 @@ Multi-step agents can **plan and execute multiple actions** autonomously. They d
 
 ReACT is the most popular agent pattern. The agent alternates between **thinking** (reasoning) and **doing** (acting).
 
-```
-┌─────────────────────────────────────────────────────┐
-│                 ReACT LOOP                            │
-│                                                      │
-│  ┌──────────┐                                       │
-│  │ THOUGHT  │ "I need to find out about X"          │
-│  └────┬─────┘                                       │
-│       │                                              │
-│       ▼                                              │
-│  ┌──────────┐                                       │
-│  │  ACTION  │  search_web("topic X")                │
-│  └────┬─────┘                                       │
-│       │                                              │
-│       ▼                                              │
-│  ┌──────────┐                                       │
-│  │OBSERVATION│ "Results: ..."                       │
-│  └────┬─────┘                                       │
-│       │                                              │
-│       ▼                                              │
-│  ┌──────────┐                                       │
-│  │ THOUGHT  │ "Now I know X, but I need Y"         │
-│  └────┬─────┘                                       │
-│       │                                              │
-│       ▼                                              │
-│  ┌──────────┐                                       │
-│  │  ACTION  │  search_web("topic Y")                │
-│  └────┬─────┘                                       │
-│       │                                              │
-│       ▼                                              │
-│  ┌──────────┐                                       │
-│  │OBSERVATION│ "Results: ..."                       │
-│  └────┬─────┘                                       │
-│       │                                              │
-│       ▼                                              │
-│  ┌──────────┐                                       │
-│  │  ANSWER  │ "Based on X and Y, here's..."        │
-│  └──────────┘                                       │
-│                                                      │
-└─────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    T1["THOUGHT\n'I need to find out about X'"] --> A1["ACTION\nsearch_web('topic X')"]
+    A1 --> O1["OBSERVATION\n'Results: ...'"]
+    O1 --> T2["THOUGHT\n'Now I know X, but I need Y'"]
+    T2 --> A2["ACTION\nsearch_web('topic Y')"]
+    A2 --> O2["OBSERVATION\n'Results: ...'"]
+    O2 --> AN["ANSWER\n'Based on X and Y, here's...'"]
 ```
 
 **Simple ReACT Example:**
@@ -678,22 +568,12 @@ def react_agent(question, tools, max_steps=5):
 
 Reflexion adds **self-evaluation** to the agent loop. After acting, the agent asks itself: "Did that work? What should I do differently?"
 
-```
-┌─────────────────────────────────────────────────────┐
-│               REFLEXION PATTERN                       │
-│                                                      │
-│  ┌──────┐    ┌──────┐    ┌──────────┐              │
-│  │ Act  │───►│Evaluate│──►│ Reflect  │              │
-│  └──────┘    └──────┘    └─────┬────┘              │
-│     ▲                          │                     │
-│     │     "Was my answer       │                     │
-│     │      correct?"           │                     │
-│     │                          ▼                     │
-│     │     "What went      ┌──────────┐             │
-│     └─────────────────────│ Improve  │             │
-│           wrong?"          └──────────┘             │
-│                                                      │
-└─────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    Act --> Evaluate
+    Evaluate -->|"Was my answer correct?"| Reflect
+    Reflect -->|"What went wrong?"| Improve
+    Improve --> Act
 ```
 
 ```python
@@ -724,30 +604,25 @@ def reflexion_agent(question, max_attempts=3):
 
 ReWOO plans ALL actions upfront before executing any of them. This saves tokens and time.
 
-```
-┌─────────────────────────────────────────────────────┐
-│                ReWOO PATTERN                          │
-│                                                      │
-│  Phase 1: PLAN (all at once)                         │
-│  ┌─────────────────────────────┐                    │
-│  │ Step 1: Search for X        │                    │
-│  │ Step 2: Search for Y        │                    │
-│  │ Step 3: Compare X and Y     │                    │
-│  └─────────────────────────────┘                    │
-│                                                      │
-│  Phase 2: EXECUTE (run all tools)                    │
-│  ┌─────────────────────────────┐                    │
-│  │ Result 1: ...               │                    │
-│  │ Result 2: ...               │                    │
-│  └─────────────────────────────┘                    │
-│                                                      │
-│  Phase 3: SOLVE (combine results)                    │
-│  ┌─────────────────────────────┐                    │
-│  │ Final answer based on all   │                    │
-│  │ collected information       │                    │
-│  └─────────────────────────────┘                    │
-│                                                      │
-└─────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    subgraph "Phase 1: PLAN (all at once)"
+        P1["Step 1: Search for X"]
+        P2["Step 2: Search for Y"]
+        P3["Step 3: Compare X and Y"]
+    end
+    subgraph "Phase 2: EXECUTE (run all tools)"
+        R1["Result 1: ..."]
+        R2["Result 2: ..."]
+    end
+    subgraph "Phase 3: SOLVE (combine results)"
+        F["Final answer based on\nall collected information"]
+    end
+    P1 --> R1
+    P2 --> R2
+    P3 --> F
+    R1 --> F
+    R2 --> F
 ```
 
 **Comparison: ReACT vs ReWOO**
@@ -766,26 +641,15 @@ ReWOO plans ALL actions upfront before executing any of them. This saves tokens 
 
 When there are many possible paths, agents can explore multiple options like a tree:
 
-```
-                        ┌─────────┐
-                        │  Start  │
-                        └────┬────┘
-                             │
-                ┌────────────┼────────────┐
-                ▼            ▼            ▼
-          ┌──────────┐ ┌──────────┐ ┌──────────┐
-          │ Option A │ │ Option B │ │ Option C │
-          │ Score: 3 │ │ Score: 8 │ │ Score: 5 │
-          └──────────┘ └────┬─────┘ └──────────┘
-                            │
-                   ┌────────┼────────┐
-                   ▼        ▼        ▼
-             ┌────────┐┌────────┐┌────────┐
-             │ B1     ││ B2  ✓ ││ B3     │
-             │Score: 6││Score: 9││Score: 4│
-             └────────┘└────────┘└────────┘
-                          │
-                     Best path!
+```mermaid
+graph TD
+    S[Start] --> A["Option A\nScore: 3"]
+    S --> B["Option B\nScore: 8"]
+    S --> C["Option C\nScore: 5"]
+    B --> B1["B1\nScore: 6"]
+    B --> B2["B2 ✓\nScore: 9"]
+    B --> B3["B3\nScore: 4"]
+    B2 -->|Best path!| Done((Done))
 ```
 
 **Concepts:**
@@ -804,26 +668,13 @@ This is useful for complex reasoning tasks like math proofs or code generation.
 
 Multiple specialized agents collaborating on a task, each with their own role and tools.
 
-```
-┌─────────────────────────────────────────────────────────┐
-│            MULTI-AGENT SYSTEM EXAMPLE                     │
-│                                                          │
-│   User Question: "Write a blog post about AI trends"     │
-│                                                          │
-│   ┌────────────┐                                        │
-│   │ Coordinator│ (assigns tasks, manages flow)          │
-│   └─────┬──────┘                                        │
-│         │                                                │
-│   ┌─────┼──────────────────────┐                        │
-│   │     │                      │                        │
-│   ▼     ▼                      ▼                        │
-│ ┌─────┐ ┌─────────┐  ┌──────────────┐                 │
-│ │Researcher│ │Writer   │  │Editor        │                 │
-│ │(searches │ │(writes  │  │(reviews and  │                 │
-│ │ the web) │ │ content)│  │ improves)    │                 │
-│ └─────┘ └─────────┘  └──────────────┘                 │
-│                                                          │
-└─────────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    U["User Question:\n'Write a blog post about AI trends'"]
+    U --> CO["Coordinator\n(assigns tasks, manages flow)"]
+    CO --> R["Researcher\n(searches the web)"]
+    CO --> W["Writer\n(writes content)"]
+    CO --> E["Editor\n(reviews and improves)"]
 ```
 
 ### 5.2 Challenges
@@ -847,24 +698,15 @@ Multiple specialized agents collaborating on a task, each with their own role an
 
 A2A is a **standard protocol** (by Google) for agents to communicate with each other, similar to how MCP standardizes tool access.
 
+```mermaid
+graph LR
+    A["Agent A\n(any vendor)"] <-->|"A2A Protocol\nStandard messages\nfor task delegation"| B["Agent B\n(any vendor)"]
 ```
-┌─────────────────────────────────────────────────────────┐
-│                A2A PROTOCOL                               │
-│                                                          │
-│  ┌─────────┐    A2A Protocol     ┌─────────┐           │
-│  │ Agent A │◄───────────────────►│ Agent B │           │
-│  │ (any    │  Standard messages  │ (any    │           │
-│  │  vendor)│  for task delegation│  vendor)│           │
-│  └─────────┘                     └─────────┘           │
-│                                                          │
-│  Key concepts:                                           │
-│  • Agent Card: describes what an agent can do            │
-│  • Task: unit of work with lifecycle (submitted →        │
-│    working → completed)                                  │
-│  • Message/Part: structured communication               │
-│                                                          │
-└─────────────────────────────────────────────────────────┘
-```
+
+**Key concepts:**
+- **Agent Card:** describes what an agent can do
+- **Task:** unit of work with lifecycle (submitted → working → completed)
+- **Message/Part:** structured communication
 
 **MCP vs A2A:**
 - **MCP** = LLM ↔ Tool (like calling a function)
@@ -878,27 +720,16 @@ How do you know if your agent works well? Here are key metrics:
 
 ### Evaluation Dimensions
 
-```
-┌─────────────────────────────────────────────────────────┐
-│              EVALUATION FRAMEWORK                         │
-│                                                          │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐ │
-│  │  Accuracy    │  │  Efficiency  │  │  Reliability │ │
-│  │              │  │              │  │              │ │
-│  │ Did it get   │  │ How many     │  │ Does it work │ │
-│  │ the right    │  │ steps/calls  │  │ consistently?│ │
-│  │ answer?      │  │ did it take? │  │              │ │
-│  └──────────────┘  └──────────────┘  └──────────────┘ │
-│                                                          │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐ │
-│  │  Safety      │  │  Cost        │  │  Latency     │ │
-│  │              │  │              │  │              │ │
-│  │ Did it avoid │  │ How many     │  │ How long     │ │
-│  │ harmful      │  │ tokens/$     │  │ did it take? │ │
-│  │ actions?     │  │ were used?   │  │              │ │
-│  └──────────────┘  └──────────────┘  └──────────────┘ │
-│                                                          │
-└─────────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    subgraph "EVALUATION FRAMEWORK"
+        Acc["Accuracy\nDid it get the\nright answer?"]
+        Eff["Efficiency\nHow many\nsteps/calls?"]
+        Rel["Reliability\nDoes it work\nconsistently?"]
+        Saf["Safety\nDid it avoid\nharmful actions?"]
+        Cos["Cost\nHow many\ntokens/$ used?"]
+        Lat["Latency\nHow long\ndid it take?"]
+    end
 ```
 
 ### Evaluation Methods
@@ -978,33 +809,14 @@ def evaluate_agent(agent, test_cases):
 
 ## Summary Diagram: How It All Fits Together
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                                                                  │
-│   USER QUESTION                                                  │
-│        │                                                         │
-│        ▼                                                         │
-│   ┌─────────────────────────────────────────┐                   │
-│   │           AGENT (ReACT Loop)             │                   │
-│   │                                          │                   │
-│   │   Think ──► What tool do I need?         │                   │
-│   │     │                                    │                   │
-│   │     ▼                                    │                   │
-│   │   Act ──► Call tool (via Tool Calling)   │                   │
-│   │     │                                    │                   │
-│   │     ▼                                    │                   │
-│   │   Observe ──► Read the result            │                   │
-│   │     │                                    │                   │
-│   │     ▼                                    │                   │
-│   │   Think ──► Do I need more info?         │                   │
-│   │     │         Yes → loop back            │                   │
-│   │     │         No → answer                │                   │
-│   └─────┼───────────────────────────────────┘                   │
-│         │                                                        │
-│         ▼                                                        │
-│   FINAL ANSWER (with citations)                                  │
-│                                                                  │
-└─────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    Q[USER QUESTION] --> Think1["Think: What tool do I need?"]
+    Think1 --> Act["Act: Call tool (via Tool Calling)"]
+    Act --> Observe["Observe: Read the result"]
+    Observe --> Think2{"Think: Do I need more info?"}
+    Think2 -->|Yes| Act
+    Think2 -->|No| Answer["FINAL ANSWER\n(with citations)"]
 ```
 
 ---
