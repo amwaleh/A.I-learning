@@ -25,21 +25,11 @@ When you have a pre-trained Large Language Model (LLM), it knows a lot about gen
 
 There are three main approaches:
 
-```
-┌─────────────────────────────────────────────────────────┐
-│            Adaptation Techniques for LLMs                │
-├─────────────────────────────────────────────────────────┤
-│                                                         │
-│  1. Finetuning          - Change the model's weights    │
-│                           (teach it new knowledge)      │
-│                                                         │
-│  2. Prompt Engineering  - Change the input/instructions │
-│                           (guide its existing knowledge)│
-│                                                         │
-│  3. RAG                 - Give it external documents    │
-│                           at query time (open-book exam)│
-│                                                         │
-└─────────────────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+    LLM["Pre-trained LLM"] --> A["Finetuning\nChange the model's weights\n(teach it new knowledge)"]
+    LLM --> B["Prompt Engineering\nChange the input/instructions\n(guide its existing knowledge)"]
+    LLM --> C["RAG\nGive it external documents\nat query time (open-book exam)"]
 ```
 
 ### When to Use What?
@@ -72,40 +62,29 @@ A model like GPT has billions of parameters (numbers that define its behavior). 
 
 PEFT solves this by updating only a **small subset** of parameters while keeping most of the model frozen.
 
-```
-┌────────────────────────────────────────────────┐
-│         Full Finetuning vs PEFT                │
-├────────────────────────────────────────────────┤
-│                                                │
-│  Full Finetuning:                              │
-│  [■■■■■■■■■■■■■■■■■■■■] ← ALL params updated │
-│   (billions of numbers change)                 │
-│                                                │
-│  PEFT:                                         │
-│  [□□□□□□□□□□□□□□□□□□■■] ← Only ~1-5% updated │
-│   (most stay frozen)                           │
-│                                                │
-└────────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+    subgraph Full["Full Finetuning"]
+        A["■■■■■■■■■■ ALL params updated\n(billions of numbers change)"]
+    end
+    subgraph PEFT["PEFT"]
+        B["□□□□□□□□■■ Only ~1–5% updated\n(most stay frozen)"]
+    end
 ```
 
 ### Adapters
 
 Adapters are small neural network layers inserted *between* the existing layers of a model. Only the adapter layers are trained.
 
-```
-Original Model Layer          Model with Adapter
-┌─────────────┐              ┌─────────────┐
-│  Layer N    │              │  Layer N    │
-└──────┬──────┘              └──────┬──────┘
-       │                            │
-       │                     ┌──────┴──────┐
-       │                     │  Adapter    │ ← Small, trainable
-       │                     │  (few params)│
-       │                     └──────┬──────┘
-       │                            │
-┌──────┴──────┐              ┌──────┴──────┐
-│  Layer N-1  │              │  Layer N-1  │
-└─────────────┘              └─────────────┘
+```mermaid
+flowchart TD
+    subgraph Original["Original Model"]
+        A1["Layer N"] --> A2["Layer N-1"]
+    end
+    subgraph WithAdapter["Model with Adapter"]
+        B1["Layer N"] --> B2["Adapter\n(small, trainable, few params)"]
+        B2 --> B3["Layer N-1"]
+    end
 ```
 
 ### LoRA (Low-Rank Adaptation)
@@ -242,24 +221,20 @@ Sarah's response:"""
 
 ### Comparison Diagram
 
-```
-┌────────────────────────────────────────────────────────┐
-│              Prompt Engineering Techniques              │
-├────────────────────────────────────────────────────────┤
-│                                                        │
-│  Zero-shot:    [Instruction] → [Answer]                │
-│                "Translate this to French"               │
-│                                                        │
-│  Few-shot:     [Examples] + [Instruction] → [Answer]   │
-│                "Here are 3 examples, now do this one"   │
-│                                                        │
-│  Chain-of-     [Instruction] → [Step-by-step] → [Ans]  │
-│  Thought:      "Think through this step by step"       │
-│                                                        │
-│  Role/Context: [Role + Context + Instruction] → [Ans]  │
-│                "You are X, the user is Y, do Z"        │
-│                                                        │
-└────────────────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+    subgraph ZeroShot["Zero-shot"]
+        Z1["Instruction"] --> Z2["Answer"]
+    end
+    subgraph FewShot["Few-shot"]
+        F1["Examples + Instruction"] --> F2["Answer"]
+    end
+    subgraph CoT["Chain-of-Thought"]
+        C1["Instruction"] --> C2["Step-by-step"] --> C3["Answer"]
+    end
+    subgraph Role["Role/Context"]
+        R1["Role + Context + Instruction"] --> R2["Answer"]
+    end
 ```
 
 ---
@@ -270,35 +245,12 @@ Sarah's response:"""
 
 RAG is a technique where, instead of relying solely on what the model memorized during training, you **retrieve relevant documents** and include them in the prompt so the model can generate answers based on actual data.
 
-```
-┌──────────────────────────────────────────────────────────┐
-│                    How RAG Works                          │
-├──────────────────────────────────────────────────────────┤
-│                                                          │
-│  User Question                                           │
-│       │                                                  │
-│       ▼                                                  │
-│  ┌─────────┐     ┌──────────────┐                       │
-│  │ Retrieve│────▶│ Document     │                       │
-│  │ relevant│     │ Database     │                       │
-│  │ docs    │◀────│ (your data)  │                       │
-│  └────┬────┘     └──────────────┘                       │
-│       │                                                  │
-│       ▼                                                  │
-│  ┌─────────────────────┐                                │
-│  │ Combine question +  │                                │
-│  │ retrieved documents  │                                │
-│  │ into a prompt        │                                │
-│  └──────────┬──────────┘                                │
-│             │                                            │
-│             ▼                                            │
-│  ┌─────────────────────┐                                │
-│  │    LLM generates    │                                │
-│  │    answer using     │                                │
-│  │    the context      │                                │
-│  └─────────────────────┘                                │
-│                                                          │
-└──────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    A["User Question"] --> B["Retrieve Relevant Docs"]
+    B <--> C[("Document Database\n(your data)")]
+    B --> D["Combine Question +\nRetrieved Documents\ninto a Prompt"]
+    D --> E["LLM Generates Answer\nUsing the Context"]
 ```
 
 ### Why RAG?
@@ -312,12 +264,14 @@ RAG is a technique where, instead of relying solely on what the model memorized 
 
 ### RAG vs Finetuning
 
-```
-Finetuning:   Train once ──────────► Model "knows" the info
-              (expensive, static)
-
-RAG:          Query time ──► Retrieve docs ──► Generate answer
-              (cheaper, always up-to-date)
+```mermaid
+flowchart LR
+    subgraph Finetuning["Finetuning (expensive, static)"]
+        FT1["Train Once"] --> FT2["Model 'knows' the info"]
+    end
+    subgraph RAG["RAG (cheaper, always up-to-date)"]
+        R1["Query Time"] --> R2["Retrieve Docs"] --> R3["Generate Answer"]
+    end
 ```
 
 ---
@@ -385,38 +339,21 @@ for doc in documents:
 
 Documents are often too long to fit in a prompt. We split them into smaller **chunks**.
 
-```
-┌──────────────────────────────────────────────────────────┐
-│                   Chunking Strategies                     │
-├──────────────────────────────────────────────────────────┤
-│                                                          │
-│  Original Document (5000 words):                         │
-│  ┌─────────────────────────────────────────────────┐    │
-│  │ Introduction... Chapter 1... Chapter 2... FAQ...│    │
-│  └─────────────────────────────────────────────────┘    │
-│                                                          │
-│  Strategy 1: Fixed-Size Chunks (e.g., 500 chars each)   │
-│  ┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐           │
-│  │ C1 ││ C2 ││ C3 ││ C4 ││ C5 ││ C6 ││ C7 │           │
-│  └────┘└────┘└────┘└────┘└────┘└────┘└────┘           │
-│                                                          │
-│  Strategy 2: Overlapping Chunks (overlap = 50 chars)     │
-│  ┌──────┐                                               │
-│  │  C1  │                                               │
-│  └───┬──┘                                               │
-│      ┌┴─────┐  ← overlap prevents losing context       │
-│      │  C2  │                                           │
-│      └───┬──┘                                           │
-│          ┌┴─────┐                                       │
-│          │  C3  │                                       │
-│          └──────┘                                       │
-│                                                          │
-│  Strategy 3: Semantic Chunks (by topic/section)          │
-│  ┌──────────┐┌───────┐┌─────────────┐┌───────┐         │
-│  │  Intro   ││ Ch. 1 ││   Ch. 2     ││  FAQ  │         │
-│  └──────────┘└───────┘└─────────────┘└───────┘         │
-│                                                          │
-└──────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    Doc["Original Document (5000 words)\nIntroduction... Chapter 1... Chapter 2... FAQ..."]
+    Doc --> S1
+    Doc --> S2
+    Doc --> S3
+    subgraph S1["Strategy 1: Fixed-Size Chunks (500 chars each)"]
+        C1["C1"] ~~~ C2["C2"] ~~~ C3["C3"] ~~~ C4["C4"] ~~~ C5["C5"]
+    end
+    subgraph S2["Strategy 2: Overlapping Chunks (overlap prevents losing context)"]
+        O1["C1"] ~~~ O2["C2 (overlaps C1)"] ~~~ O3["C3 (overlaps C2)"]
+    end
+    subgraph S3["Strategy 3: Semantic Chunks (by topic/section)"]
+        SE1["Intro"] ~~~ SE2["Ch. 1"] ~~~ SE3["Ch. 2"] ~~~ SE4["FAQ"]
+    end
 ```
 
 ```python
@@ -441,62 +378,25 @@ Once you have chunks, you need to organize them for fast searching. This is call
 
 #### Types of Indexing
 
-```
-┌──────────────────────────────────────────────────────┐
-│                  Indexing Methods                     │
-├──────────────────────────────────────────────────────┤
-│                                                      │
-│  1. Keyword Index                                    │
-│     "password" → [chunk 3, chunk 7, chunk 12]        │
-│     "refund"   → [chunk 1, chunk 5]                  │
-│     Like a book's index at the back                  │
-│                                                      │
-│  2. Full-Text Index                                  │
-│     More advanced keyword search with stemming       │
-│     "running" also matches "run", "ran", "runs"      │
-│                                                      │
-│  3. Knowledge-Based Index                            │
-│     Stores relationships: "LoRA" → is_a → "PEFT"    │
-│     Uses knowledge graphs                            │
-│                                                      │
-│  4. Vector-Based Index (most common for RAG)         │
-│     Each chunk → embedding vector → stored in DB     │
-│     Search by similarity, not exact match            │
-│                                                      │
-└──────────────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+    Chunks["Document Chunks"] --> KW["Keyword Index\n'password' → chunks 3,7,12\nLike a book's index"]
+    Chunks --> FT["Full-Text Index\nStemming: 'running'\nmatches 'run','ran','runs'"]
+    Chunks --> KB["Knowledge-Based Index\nRelationships: 'LoRA' →is_a→ 'PEFT'\nKnowledge graphs"]
+    Chunks --> VB["Vector-Based Index ⭐\nchunk → embedding → stored in DB\nSearch by similarity"]
 ```
 
 #### Embedding Models
 
 An **embedding model** converts text into a list of numbers (a vector) that captures its *meaning*.
 
-```
-┌───────────────────────────────────────────────────────┐
-│              How Embeddings Work                       │
-├───────────────────────────────────────────────────────┤
-│                                                       │
-│  "How do I reset my password?"                        │
-│       │                                               │
-│       ▼ (embedding model)                             │
-│  [0.12, -0.45, 0.78, 0.33, ..., -0.21]  (768 nums)  │
-│                                                       │
-│  "I forgot my login credentials"                      │
-│       │                                               │
-│       ▼ (embedding model)                             │
-│  [0.11, -0.43, 0.76, 0.35, ..., -0.19]  (768 nums)  │
-│                                                       │
-│  These two vectors are CLOSE because the              │
-│  sentences mean similar things!                       │
-│                                                       │
-│  "What's the weather today?"                          │
-│       │                                               │
-│       ▼ (embedding model)                             │
-│  [0.89, 0.12, -0.56, 0.02, ..., 0.67]   (768 nums)  │
-│                                                       │
-│  This vector is FAR from the first two                │
-│  because it's about a different topic.                │
-│                                                       │
-└───────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    A["'How do I reset my password?'"] -->|embedding model| V1["[0.12, -0.45, 0.78, ...]"]
+    B["'I forgot my login credentials'"] -->|embedding model| V2["[0.11, -0.43, 0.76, ...]"]
+    C["'What's the weather today?'"] -->|embedding model| V3["[0.89, 0.12, -0.56, ...]"]
+    V1 <-->|"CLOSE — similar meaning"| V2
+    V1 <-->|"FAR — different topic"| V3
 ```
 
 ```python
@@ -547,30 +447,16 @@ Compare to ALL documents:
 
 Uses clever data structures to find *approximately* the closest matches much faster.
 
-```
-┌────────────────────────────────────────────────────────┐
-│        Exact vs Approximate Nearest Neighbor           │
-├────────────────────────────────────────────────────────┤
-│                                                        │
-│  Exact (Brute Force):                                  │
-│  • Checks ALL documents                                │
-│  • 100% accurate                                       │
-│  • O(n) time — slow for large datasets                 │
-│  • Good for: < 10,000 documents                        │
-│                                                        │
-│  Approximate (ANN):                                    │
-│  • Checks only a smart subset                          │
-│  • ~95-99% accurate                                    │
-│  • O(log n) time — fast even for millions              │
-│  • Good for: > 10,000 documents                        │
-│  • Methods: HNSW, IVF, Annoy, FAISS                   │
-│                                                        │
-│  Analogy:                                              │
-│  Exact = Checking every book in the library            │
-│  ANN   = Going to the right section first,             │
-│          then checking nearby shelves                   │
-│                                                        │
-└────────────────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+    Q["Query Vector"] --> Exact
+    Q --> ANN
+    subgraph Exact["Exact (Brute Force)"]
+        E1["Checks ALL docs\n100% accurate\nO(n) — slow\nGood for &lt;10K docs"]
+    end
+    subgraph ANN["Approximate (ANN)"]
+        A1["Checks smart subset\n~95–99% accurate\nO(log n) — fast\nMethods: HNSW, IVF, FAISS"]
+    end
 ```
 
 Popular vector databases like **ChromaDB**, **Pinecone**, **FAISS**, and **Weaviate** implement ANN algorithms.
@@ -621,35 +507,15 @@ Answer:"""
 
 RAFT is a technique that trains the model to be *better at using retrieved documents*. Instead of just fine-tuning on question-answer pairs, you fine-tune on (question + documents → answer) triples, including both relevant AND irrelevant documents.
 
-```
-┌────────────────────────────────────────────────────────┐
-│                   How RAFT Works                        │
-├────────────────────────────────────────────────────────┤
-│                                                        │
-│  Standard RAG:                                         │
-│  Model receives docs → tries its best to use them      │
-│                                                        │
-│  RAFT Training:                                        │
-│  Train the model with:                                 │
-│  ┌─────────────────────────────────────┐              │
-│  │ Question: "How to reset password?"  │              │
-│  │                                     │              │
-│  │ Documents provided:                 │              │
-│  │   D1: [Password reset steps] ← relevant (oracle)  │
-│  │   D2: [Shipping policy]      ← irrelevant         │
-│  │   D3: [Return policy]        ← irrelevant         │
-│  │                                     │              │
-│  │ Expected: Use D1, ignore D2 & D3   │              │
-│  │ Answer: "Go to Settings > ..."     │              │
-│  └─────────────────────────────────────┘              │
-│                                                        │
-│  The model LEARNS to:                                  │
-│  ✓ Identify which documents are relevant               │
-│  ✓ Ignore distracting/irrelevant documents             │
-│  ✓ Extract the right information                       │
-│  ✓ Generate accurate answers with citations            │
-│                                                        │
-└────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    Q["Question: 'How to reset password?'"] --> D1["D1: Password reset steps\n✓ relevant (oracle)"]
+    Q --> D2["D2: Shipping policy\n✗ irrelevant"]
+    Q --> D3["D3: Return policy\n✗ irrelevant"]
+    D1 -->|"Use"| Answer["Answer: 'Go to Settings > ...'"]
+    D2 -.->|"Ignore"| Answer
+    D3 -.->|"Ignore"| Answer
+    Answer --> Learns["Model LEARNS to:\n✓ Identify relevant docs\n✓ Ignore distractors\n✓ Extract right info\n✓ Generate with citations"]
 ```
 
 ### RAFT Training Data Format
@@ -729,26 +595,15 @@ Generated: "Please email support@techco.com"
 
 ### Evaluation Framework Diagram
 
-```
-┌──────────────────────────────────────────────────────────┐
-│              RAG Evaluation Pipeline                      │
-├──────────────────────────────────────────────────────────┤
-│                                                          │
-│  User Query ──► Retrieval ──► Generation ──► Answer      │
-│                    │                │           │         │
-│                    ▼                ▼           ▼         │
-│             ┌───────────┐   ┌────────────┐ ┌────────┐   │
-│             │ Context   │   │Faithfulness│ │Answer  │   │
-│             │ Relevance │   │            │ │Correct-│   │
-│             │           │   │ Is answer  │ │ness    │   │
-│             │ Are docs  │   │ supported  │ │        │   │
-│             │ relevant? │   │ by context?│ │Is it   │   │
-│             │           │   │            │ │right?  │   │
-│             └───────────┘   └────────────┘ └────────┘   │
-│                                                          │
-│  Tools: RAGAS, LangSmith, TruLens                        │
-│                                                          │
-└──────────────────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+    A["User Query"] --> B["Retrieval"]
+    B --> C["Generation"]
+    C --> D["Answer"]
+    B --> E["📊 Context Relevance\nAre docs relevant?"]
+    C --> F["📊 Faithfulness\nIs answer supported\nby context?"]
+    D --> G["📊 Answer Correctness\nIs it right?"]
+    E & F & G -.- H["Tools: RAGAS, LangSmith, TruLens"]
 ```
 
 ```python
@@ -783,75 +638,23 @@ def evaluate_rag_response(question, context_chunks, generated_answer, ground_tru
 
 Here's the complete architecture of a RAG system from start to finish:
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                    COMPLETE RAG ARCHITECTURE                         │
-├─────────────────────────────────────────────────────────────────────┤
-│                                                                     │
-│  ╔═══════════════════════════════════════════════════════════════╗  │
-│  ║                    OFFLINE PIPELINE                           ║  │
-│  ║                (Done once, before any queries)                ║  │
-│  ║                                                              ║  │
-│  ║  Raw Documents                                               ║  │
-│  ║  (PDFs, FAQs, docs)                                          ║  │
-│  ║       │                                                      ║  │
-│  ║       ▼                                                      ║  │
-│  ║  ┌──────────┐                                                ║  │
-│  ║  │  Parse   │  Extract text from various formats             ║  │
-│  ║  └────┬─────┘                                                ║  │
-│  ║       │                                                      ║  │
-│  ║       ▼                                                      ║  │
-│  ║  ┌──────────┐                                                ║  │
-│  ║  │  Chunk   │  Split into manageable pieces                  ║  │
-│  ║  └────┬─────┘                                                ║  │
-│  ║       │                                                      ║  │
-│  ║       ▼                                                      ║  │
-│  ║  ┌──────────┐                                                ║  │
-│  ║  │  Embed   │  Convert chunks to vectors                     ║  │
-│  ║  └────┬─────┘                                                ║  │
-│  ║       │                                                      ║  │
-│  ║       ▼                                                      ║  │
-│  ║  ┌──────────┐                                                ║  │
-│  ║  │  Index   │  Store in vector database                      ║  │
-│  ║  └──────────┘                                                ║  │
-│  ║                                                              ║  │
-│  ╚═══════════════════════════════════════════════════════════════╝  │
-│                                                                     │
-│  ╔═══════════════════════════════════════════════════════════════╗  │
-│  ║                    ONLINE PIPELINE                            ║  │
-│  ║              (Happens for each user query)                    ║  │
-│  ║                                                              ║  │
-│  ║  User Query: "How do I return a product?"                    ║  │
-│  ║       │                                                      ║  │
-│  ║       ▼                                                      ║  │
-│  ║  ┌──────────┐                                                ║  │
-│  ║  │  Embed   │  Convert query to vector                       ║  │
-│  ║  │  Query   │                                                ║  │
-│  ║  └────┬─────┘                                                ║  │
-│  ║       │                                                      ║  │
-│  ║       ▼                                                      ║  │
-│  ║  ┌──────────┐     ┌────────────────┐                        ║  │
-│  ║  │  Search  │────▶│ Vector DB      │                        ║  │
-│  ║  │  (ANN)   │◀────│ (ChromaDB)     │                        ║  │
-│  ║  └────┬─────┘     └────────────────┘                        ║  │
-│  ║       │                                                      ║  │
-│  ║       ▼  Top-K relevant chunks                               ║  │
-│  ║  ┌──────────────────────────────┐                            ║  │
-│  ║  │  Build Prompt                │                            ║  │
-│  ║  │  (query + context + system)  │                            ║  │
-│  ║  └─────────────┬────────────────┘                            ║  │
-│  ║                │                                              ║  │
-│  ║                ▼                                              ║  │
-│  ║  ┌──────────────────────────────┐                            ║  │
-│  ║  │  LLM Generates Answer       │                            ║  │
-│  ║  └─────────────┬────────────────┘                            ║  │
-│  ║                │                                              ║  │
-│  ║                ▼                                              ║  │
-│  ║  Answer: "To return a product, visit..."                     ║  │
-│  ║                                                              ║  │
-│  ╚═══════════════════════════════════════════════════════════════╝  │
-│                                                                     │
-└─────────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    subgraph Offline["OFFLINE PIPELINE (done once, before any queries)"]
+        A["Raw Documents\n(PDFs, FAQs, docs)"] --> B["Parse\nExtract text from various formats"]
+        B --> C["Chunk\nSplit into manageable pieces"]
+        C --> D["Embed\nConvert chunks to vectors"]
+        D --> E[("Index\nStore in vector database")]
+    end
+    subgraph Online["ONLINE PIPELINE (happens for each user query)"]
+        F["User Query:\n'How do I return a product?'"] --> G["Embed Query\nConvert query to vector"]
+        G --> H["Search (ANN)"]
+        H <--> I[("Vector DB\n(ChromaDB)")]
+        H -->|"Top-K relevant chunks"| J["Build Prompt\n(query + context + system)"]
+        J --> K["LLM Generates Answer"]
+        K --> L["Answer:\n'To return a product, visit...'"]
+    end
+    E -.-> I
 ```
 
 ### Design Decisions Summary

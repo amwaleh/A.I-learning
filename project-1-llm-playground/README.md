@@ -17,22 +17,10 @@
 
 A **Large Language Model (LLM)** is a computer program that has learned to understand and generate human language by reading enormous amounts of text. Think of it like a student who has read millions of books and can now write essays, answer questions, and hold conversations.
 
-```
-┌─────────────────────────────────────────────────┐
-│                    LLM                           │
-│                                                 │
-│   Input: "The capital of France is"             │
-│                    │                            │
-│                    ▼                            │
-│   ┌─────────────────────────────┐              │
-│   │  Billions of learned        │              │
-│   │  patterns from text data    │              │
-│   └─────────────────────────────┘              │
-│                    │                            │
-│                    ▼                            │
-│   Output: "Paris"                               │
-│                                                 │
-└─────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    A["Input: 'The capital of France is'"] --> B["Billions of learned\npatterns from text data"]
+    B --> C["Output: 'Paris'"]
 ```
 
 ### How Does an LLM Work (Simplified)?
@@ -64,15 +52,9 @@ The model picks the most likely word (or samples from the distribution) and appe
 
 ### The Two Phases of Building an LLM
 
-```
-┌──────────────────────┐       ┌──────────────────────┐
-│    PRE-TRAINING      │       │    POST-TRAINING     │
-│                      │       │                      │
-│  Learn language from │  ───► │  Learn to follow     │
-│  billions of words   │       │  instructions and    │
-│  (expensive, slow)   │       │  be helpful          │
-│                      │       │  (cheaper, faster)   │
-└──────────────────────┘       └──────────────────────┘
+```mermaid
+flowchart LR
+    A["**PRE-TRAINING**\nLearn language from\nbillions of words\n(expensive, slow)"] --> B["**POST-TRAINING**\nLearn to follow\ninstructions and be helpful\n(cheaper, faster)"]
 ```
 
 ---
@@ -87,19 +69,21 @@ Pre-training is where the model learns the fundamentals of language. It reads va
 
 LLMs need **terabytes** of text data. Here are the main sources:
 
-```
-┌─────────────────────────────────────────────────────┐
-│              DATA SOURCES                            │
-├─────────────────────────────────────────────────────┤
-│                                                     │
-│  📚 Books          - Fiction, textbooks, manuals    │
-│  🌐 Websites       - Blogs, articles, forums       │
-│  📰 News           - Articles, reports             │
-│  💻 Code           - GitHub repositories           │
-│  📄 Wikipedia      - Encyclopedic knowledge        │
-│  🗣️ Conversations  - Reddit, StackOverflow         │
-│                                                     │
-└─────────────────────────────────────────────────────┘
+```mermaid
+mindmap
+  root((DATA SOURCES))
+    📚 Books
+      Fiction, textbooks, manuals
+    🌐 Websites
+      Blogs, articles, forums
+    📰 News
+      Articles, reports
+    💻 Code
+      GitHub repositories
+    📄 Wikipedia
+      Encyclopedic knowledge
+    🗣️ Conversations
+      Reddit, StackOverflow
 ```
 
 #### Manual Crawling
@@ -120,21 +104,10 @@ def crawl(url):
 
 **Common Crawl** is a free, open dataset of web pages. It contains petabytes of data collected over many years. Most LLM training datasets start with Common Crawl and then filter it.
 
-```
-Common Crawl (raw)
-│
-│  ~250 billion web pages
-│  ~petabytes of data
-│  Contains: spam, duplicates, low-quality text
-│
-▼
-Filtered Dataset (clean)
-│
-│  Billions of high-quality pages
-│  Terabytes of useful text
-│
-▼
-Training Data
+```mermaid
+flowchart TD
+    A["Common Crawl (raw)\n~250B web pages, petabytes of data\nContains: spam, duplicates, low-quality text"] --> B["Filtered Dataset (clean)\nBillions of high-quality pages\nTerabytes of useful text"]
+    B --> C["Training Data"]
 ```
 
 ### 2.2 Data Cleaning
@@ -143,12 +116,12 @@ Raw web data is messy. It contains spam, ads, duplicates, and nonsense. Cleaning
 
 #### The Cleaning Pipeline
 
-```
-Raw Data ──► Remove Duplicates ──► Filter Quality ──► Remove Toxic Content ──► Clean Data
-                   │                     │                      │
-                   │                     │                      │
-           (exact & fuzzy         (classifier or          (keyword lists,
-            deduplication)         heuristics)             classifiers)
+```mermaid
+flowchart LR
+    A["Raw Data"] --> B["Remove Duplicates\n(exact & fuzzy\ndeduplication)"]
+    B --> C["Filter Quality\n(classifier or\nheuristics)"]
+    C --> D["Remove Toxic Content\n(keyword lists,\nclassifiers)"]
+    D --> E["Clean Data"]
 ```
 
 #### Notable Cleaning Projects
@@ -236,24 +209,11 @@ print(token_ids)
 # [15496, 11, 995, 0]
 ```
 
-```
-┌─────────────────────────────────────────────────┐
-│           TOKENIZATION PIPELINE                  │
-│                                                  │
-│  "Hello, world!"                                 │
-│        │                                         │
-│        ▼                                         │
-│  ┌──────────────┐                               │
-│  │  Tokenizer   │  (BPE, WordPiece, etc.)       │
-│  └──────────────┘                               │
-│        │                                         │
-│        ▼                                         │
-│  ['Hello', ',', ' world', '!']   ← tokens       │
-│        │                                         │
-│        ▼                                         │
-│  [15496, 11, 995, 0]            ← token IDs     │
-│                                                  │
-└─────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    A["'Hello, world!'"] --> B["Tokenizer\n(BPE, WordPiece, etc.)"]
+    B --> C["Tokens: 'Hello', ',', ' world', '!'"]
+    C --> D["Token IDs: 15496, 11, 995, 0"]
 ```
 
 ### 2.4 Architecture
@@ -262,16 +222,19 @@ print(token_ids)
 
 A **neural network** is inspired by the human brain. It's layers of connected "neurons" that process information:
 
-```
-Input Layer      Hidden Layers      Output Layer
-    ○                ○                   ○
-    ○ ─────────── ○   ○ ─────────── ○
-    ○ ─────────── ○   ○ ─────────── ○
-    ○ ─────────── ○   ○ ─────────── ○
-    ○                ○                   ○
-
-  (token IDs)    (learned patterns)   (next token
-                                       probabilities)
+```mermaid
+flowchart LR
+    subgraph Input["Input Layer\n(token IDs)"]
+        I1((○)) & I2((○)) & I3((○))
+    end
+    subgraph Hidden["Hidden Layers\n(learned patterns)"]
+        H1((○)) & H2((○)) & H3((○))
+    end
+    subgraph Output["Output Layer\n(next token probabilities)"]
+        O1((○)) & O2((○))
+    end
+    I1 & I2 & I3 --> H1 & H2 & H3
+    H1 & H2 & H3 --> O1 & O2
 ```
 
 Each connection has a **weight** (a number). Training adjusts these weights so the network produces better outputs.
@@ -280,29 +243,12 @@ Each connection has a **weight** (a number). Training adjusts these weights so t
 
 The **Transformer** architecture (2017) revolutionized language AI. Its key innovation is the **attention mechanism** — the ability to look at all words in a sentence simultaneously and decide which ones are important for each other.
 
-```
-┌─────────────────────────────────────────────────────────┐
-│              TRANSFORMER BLOCK                            │
-│                                                          │
-│  Input: Token embeddings                                 │
-│         │                                                │
-│         ▼                                                │
-│  ┌─────────────────────┐                                │
-│  │  Self-Attention      │  "Which other words matter     │
-│  │                      │   for understanding this one?" │
-│  └─────────────────────┘                                │
-│         │                                                │
-│         ▼                                                │
-│  ┌─────────────────────┐                                │
-│  │  Feed-Forward        │  "Process the information"     │
-│  │  Network             │                                │
-│  └─────────────────────┘                                │
-│         │                                                │
-│         ▼                                                │
-│  Output: Updated representations                         │
-│                                                          │
-│  (Stack 32-96 of these blocks = one LLM)                │
-└─────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    A["Token Embeddings"] --> B["Self-Attention\n'Which other words matter\nfor understanding this one?'"]
+    B --> C["Feed-Forward Network\n'Process the information'"]
+    C --> D["Updated Representations"]
+    D -. "Stack 32–96 blocks = one LLM" .-> A
 ```
 
 #### Attention — An Intuition
@@ -311,38 +257,36 @@ Consider: "The cat sat on the mat because **it** was tired."
 
 What does "it" refer to? The attention mechanism helps the model figure this out:
 
-```
-"The cat sat on the mat because it was tired"
-                                  │
-          ┌───────────────────────┤
-          │ high attention        │ low attention
-          ▼                       ▼
-       "cat"                    "mat"
+```mermaid
+flowchart TD
+    A["'it' in: 'The cat sat on the mat because **it** was tired'"] -->|"high attention"| B["'cat' ✓"]
+    A -->|"low attention"| C["'mat'"]
 ```
 
 #### The GPT Family
 
 **GPT** (Generative Pre-trained Transformer) by OpenAI uses only the **decoder** part of the Transformer:
 
-```
-GPT Architecture (Decoder-only):
-
-  Token₁  Token₂  Token₃  Token₄
-    │       │       │       │
-    ▼       ▼       ▼       ▼
-  ┌───┐  ┌───┐  ┌───┐  ┌───┐
-  │ E │  │ E │  │ E │  │ E │   ← Embeddings
-  └───┘  └───┘  └───┘  └───┘
-    │       │       │       │
-    ▼       ▼       ▼       ▼
-  ┌─────────────────────────┐
-  │   Masked Self-Attention  │   ← Can only look LEFT
-  │   + Feed-Forward         │      (causal masking)
-  │   × N layers             │
-  └─────────────────────────┘
-    │       │       │       │
-    ▼       ▼       ▼       ▼
-  Pred₂  Pred₃  Pred₄  Pred₅     ← Predict NEXT token
+```mermaid
+flowchart TD
+    subgraph Tokens
+        T1["Token₁"] & T2["Token₂"] & T3["Token₃"] & T4["Token₄"]
+    end
+    subgraph Embeddings
+        E1["E"] & E2["E"] & E3["E"] & E4["E"]
+    end
+    subgraph Decoder["Masked Self-Attention + Feed-Forward × N layers\n(causal masking: can only look LEFT)"]
+        D["Decoder Layers"]
+    end
+    subgraph Predictions
+        P2["Pred₂"] & P3["Pred₃"] & P4["Pred₄"] & P5["Pred₅"]
+    end
+    T1 --> E1
+    T2 --> E2
+    T3 --> E3
+    T4 --> E4
+    E1 & E2 & E3 & E4 --> D
+    D --> P2 & P3 & P4 & P5
 ```
 
 Key point: Each token can only "see" tokens that came before it (not future tokens). This is called **causal masking**.
@@ -360,28 +304,16 @@ Key point: Each token can only "see" tokens that came before it (not future toke
 
 Instead of using ALL parameters for every token, MoE activates only a subset:
 
-```
-┌─────────────────────────────────────────┐
-│         MIXTURE OF EXPERTS              │
-│                                         │
-│  Input token                            │
-│       │                                 │
-│       ▼                                 │
-│  ┌──────────┐                          │
-│  │  Router   │  "Which experts should   │
-│  │           │   handle this token?"    │
-│  └──────────┘                          │
-│    │    │    │    │                     │
-│    ▼    ▼    ▼    ▼                     │
-│  [E1] [E2] [E3] [E4]  ← Experts       │
-│    ✓         ✓         ← Only 2 active │
-│    │         │                          │
-│    ▼         ▼                          │
-│  Combined output                        │
-│                                         │
-│  Benefit: 100B total params, but only   │
-│  ~20B active per token = faster!        │
-└─────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    A["Input Token"] --> B["Router\n'Which experts handle this token?'"]
+    B --> E1["Expert 1 ✓"]
+    B -.->|inactive| E2["Expert 2"]
+    B --> E3["Expert 3 ✓"]
+    B -.->|inactive| E4["Expert 4"]
+    E1 --> F["Combined Output"]
+    E3 --> F
+    F -.- G["100B total params, ~20B active per token = faster!"]
 ```
 
 ### 2.5 Text Generation
@@ -492,29 +424,18 @@ After pre-training, the model knows language but doesn't know how to be **helpfu
 
 SFT trains the model on high-quality examples of instructions and good responses:
 
-```
-┌─────────────────────────────────────────────────┐
-│           SFT TRAINING DATA                      │
-│                                                  │
-│  Instruction: "Explain photosynthesis simply"    │
-│  Response: "Photosynthesis is how plants         │
-│   make food using sunlight, water, and CO2..."   │
-│                                                  │
-│  Instruction: "Write a haiku about rain"         │
-│  Response: "Drops fall from gray clouds          │
-│   Dancing on the windowpane                      │
-│   Nature's lullaby"                              │
-│                                                  │
-│  (Thousands of such examples)                    │
-└─────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    subgraph SFT["SFT TRAINING DATA (thousands of pairs)"]
+        A["Instruction: 'Explain photosynthesis simply'\nResponse: 'Photosynthesis is how plants\nmake food using sunlight, water, and CO2...'"]
+        B["Instruction: 'Write a haiku about rain'\nResponse: 'Drops fall from gray clouds\nDancing on the windowpane\nNature's lullaby'"]
+    end
 ```
 
-```
-Pre-trained Model  ──►  SFT  ──►  Instruction-Following Model
-(knows language)         │         (follows instructions)
-                         │
-                    Training on
-                    (instruction, response) pairs
+```mermaid
+flowchart LR
+    A["Pre-trained Model\n(knows language)"] -->|"Training on\n(instruction, response) pairs"| B["SFT"]
+    B --> C["Instruction-Following Model\n(follows instructions)"]
 ```
 
 ### 3.2 Reinforcement Learning (RL) and RLHF
@@ -525,33 +446,20 @@ SFT only teaches from examples. But what makes a response "good" is subjective a
 
 #### RLHF (RL from Human Feedback)
 
-```
-┌─────────────────────────────────────────────────────────┐
-│                RLHF PIPELINE                             │
-│                                                          │
-│  Step 1: Collect human preferences                       │
-│  ┌────────────────────────────────────────┐             │
-│  │ Prompt: "Explain gravity"              │             │
-│  │                                        │             │
-│  │ Response A: "Gravity is a force..."    │ ← Human     │
-│  │ Response B: "Things fall down..."      │   prefers A │
-│  └────────────────────────────────────────┘             │
-│                                                          │
-│  Step 2: Train a Reward Model                           │
-│  ┌────────────────────────────────────────┐             │
-│  │ Input: (prompt, response)              │             │
-│  │ Output: score (how good is this?)      │             │
-│  └────────────────────────────────────────┘             │
-│                                                          │
-│  Step 3: Optimize with RL (e.g., PPO)                   │
-│  ┌────────────────────────────────────────┐             │
-│  │ Model generates response               │             │
-│  │      → Reward model scores it          │             │
-│  │      → Model updates to get            │             │
-│  │        higher scores                   │             │
-│  └────────────────────────────────────────┘             │
-│                                                          │
-└─────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    subgraph Step1["Step 1: Collect Human Preferences"]
+        A["Prompt: 'Explain gravity'"] --> B["Response A: 'Gravity is a force...'\nResponse B: 'Things fall down...'"]
+        B --> C["Human prefers A"]
+    end
+    subgraph Step2["Step 2: Train Reward Model"]
+        D["Input: (prompt, response)"] --> E["Output: score\n(how good is this?)"]
+    end
+    subgraph Step3["Step 3: Optimize with RL (PPO)"]
+        F["Model generates response"] --> G["Reward model scores it"]
+        G --> H["Model updates to get\nhigher scores"]
+    end
+    Step1 --> Step2 --> Step3
 ```
 
 #### Verifiable Tasks
@@ -591,23 +499,13 @@ After Training:
 
 PPO is the RL algorithm that updates the LLM based on reward signals. The key idea: don't change too much at once.
 
-```
-┌─────────────────────────────────────────────┐
-│              PPO UPDATE LOOP                 │
-│                                             │
-│  1. Generate responses with current model   │
-│  2. Score responses with reward model       │
-│  3. Update model weights to increase        │
-│     probability of high-scoring responses   │
-│  4. BUT limit how much the model changes    │
-│     (the "proximal" constraint)             │
-│  5. Repeat                                  │
-│                                             │
-│  Why limit changes?                         │
-│  Without limits, the model might "hack"     │
-│  the reward model by finding loopholes      │
-│  (reward hacking)                           │
-└─────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    A["1. Generate responses\nwith current model"] --> B["2. Score responses\nwith reward model"]
+    B --> C["3. Update model weights\n(increase high-scoring responses)"]
+    C --> D["4. Limit changes\n(proximal constraint)"]
+    D -->|"5. Repeat"| A
+    D -.- E["Why limit? Without limits, the model\nmight 'hack' the reward model\n(reward hacking)"]
 ```
 
 #### Other RL Approaches
@@ -684,25 +582,13 @@ Humans rate model outputs on criteria like:
 
 A popular leaderboard where humans compare two anonymous models side by side:
 
-```
-┌─────────────────────────────────────────────┐
-│           CHATBOT ARENA                      │
-│                                             │
-│  User asks: "Explain quantum computing"     │
-│                                             │
-│  ┌──────────────┐    ┌──────────────┐      │
-│  │  Model A     │    │  Model B     │      │
-│  │  (anonymous) │    │  (anonymous) │      │
-│  │              │    │              │      │
-│  │  "Quantum    │    │  "QC uses    │      │
-│  │   computing  │    │   qubits..." │      │
-│  │   uses..."   │    │              │      │
-│  └──────────────┘    └──────────────┘      │
-│                                             │
-│  Human votes: A wins / B wins / Tie         │
-│                                             │
-│  Results compiled into ELO rankings         │
-└─────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    A["User asks: 'Explain quantum computing'"] --> B["Model A (anonymous)\n'Quantum computing uses...'"]
+    A --> C["Model B (anonymous)\n'QC uses qubits...'"]
+    B --> D["Human votes:\nA wins / B wins / Tie"]
+    C --> D
+    D --> E["Results compiled into ELO rankings"]
 ```
 
 ---
@@ -711,35 +597,15 @@ A popular leaderboard where humans compare two anonymous models side by side:
 
 A chatbot powered by an LLM is more than just the model. Here's the full architecture:
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    CHATBOT SYSTEM DESIGN                          │
-│                                                                   │
-│  ┌──────────┐    ┌──────────────┐    ┌───────────────────┐      │
-│  │  User    │    │  Application │    │  LLM              │      │
-│  │  Input   │───►│  Layer       │───►│  (the model)      │      │
-│  └──────────┘    └──────────────┘    └───────────────────┘      │
-│                        │                       │                  │
-│                        │                       │                  │
-│                        ▼                       ▼                  │
-│              ┌──────────────────┐    ┌───────────────────┐      │
-│              │  System Prompt   │    │  Generated        │      │
-│              │  + Context       │    │  Response         │      │
-│              │  Management      │    │                   │      │
-│              └──────────────────┘    └───────────────────┘      │
-│                                              │                   │
-│                                              ▼                   │
-│                                    ┌───────────────────┐        │
-│                                    │  Safety Filters   │        │
-│                                    │  + Post-processing│        │
-│                                    └───────────────────┘        │
-│                                              │                   │
-│                                              ▼                   │
-│                                    ┌───────────────────┐        │
-│                                    │  Response to User │        │
-│                                    └───────────────────┘        │
-│                                                                   │
-└─────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    A["User Input"] --> B["Application Layer"]
+    B --> C["System Prompt\n+ Context Management"]
+    B --> D["LLM (the model)"]
+    C --> D
+    D --> E["Generated Response"]
+    E --> F["Safety Filters\n+ Post-processing"]
+    F --> G["Response to User"]
 ```
 
 ### Key Components
@@ -771,38 +637,24 @@ Since models have limited context windows, old messages may need to be summarize
 
 #### 3. Safety Filters
 
-```
-User input  ──► Input filter (block harmful prompts)
-                     │
-                     ▼
-               LLM generates
-                     │
-                     ▼
-Output filter ──► Block harmful outputs
-                     │
-                     ▼
-               Safe response to user
+```mermaid
+flowchart TD
+    A["User Input"] --> B["Input Filter\n(block harmful prompts)"]
+    B --> C["LLM Generates"]
+    C --> D["Output Filter\n(block harmful outputs)"]
+    D --> E["Safe Response to User"]
 ```
 
 #### 4. Retrieval-Augmented Generation (RAG)
 
 Instead of relying only on training data, the model can search external documents:
 
-```
-User: "What's our company's refund policy?"
-         │
-         ▼
-┌─────────────────┐
-│  Search company │
-│  documents      │──► Found: "Refunds within 30 days..."
-└─────────────────┘
-         │
-         ▼
-┌─────────────────┐
-│  LLM generates  │
-│  answer using   │──► "Our refund policy allows returns
-│  retrieved docs │     within 30 days of purchase..."
-└─────────────────┘
+```mermaid
+flowchart TD
+    A["User: 'What's our company's refund policy?'"] --> B["Search Company Documents"]
+    B --> C["Found: 'Refunds within 30 days...'"]
+    C --> D["LLM Generates Answer Using Retrieved Docs"]
+    D --> E["'Our refund policy allows returns\nwithin 30 days of purchase...'"]
 ```
 
 ---
