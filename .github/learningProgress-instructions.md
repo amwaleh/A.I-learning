@@ -251,6 +251,24 @@ The seed script (`app/seed.py`) must:
 4. **bcrypt warning**: `AttributeError: module 'bcrypt' has no attribute '__about__'` is harmless — it's a passlib compatibility issue with newer bcrypt versions. Does not affect functionality.
 5. **Rate limiting on login**: 5 requests/minute limit — users may hit 429 during testing. Consider higher limits in development.
 
+## UI Change Tracking Rule ⚠️ MANDATORY
+
+> **Every UI or layout change MUST be logged in `docs/ui-decisions.md`.**
+
+When modifying any frontend component's layout, styling, or visual behavior:
+
+1. **Before** making the change, read `docs/ui-decisions.md` to understand the current design rationale
+2. **After** making the change, append a new entry to the Change Log section with:
+   - **Date** — `YYYY-MM-DD`
+   - **Changed** — What was modified (component names, layout pattern)
+   - **Before** — How it worked previously
+   - **After** — How it works now (include ASCII diagram for layout changes)
+   - **Why** — Rationale for the change
+   - **Files modified** — List of changed files
+3. If the change affects the **Current Layout Architecture** section at the top, update that too
+
+This ensures design decisions are never lost and any contributor can understand why the UI looks the way it does.
+
 ## Future Enhancements
 
 - **Notes per topic** — Let users attach personal notes/links to each topic
