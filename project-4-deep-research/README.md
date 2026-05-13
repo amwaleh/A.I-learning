@@ -39,21 +39,16 @@ No prior AI/ML knowledge is assumed. Let's begin!
 A standard LLM generates text word-by-word, like autocomplete on steroids. A **reasoning model**
 adds an extra step: it generates intermediate "thinking" steps before producing a final answer.
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    STANDARD LLM                              │
-│                                                             │
-│   Question ──────────────────────────────► Answer           │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────────┐
-│                   REASONING LLM                              │
-│                                                             │
-│   Question ───► Think Step 1 ───► Think Step 2 ───► Answer  │
-│                 "Let me break      "Now I can               │
-│                  this down..."      conclude..."            │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+graph LR
+    subgraph Standard LLM
+        Q1[Question] --> A1[Answer]
+    end
+    subgraph Reasoning LLM
+        Q2[Question] --> T1["Think Step 1\n'Let me break this down...'"]
+        T1 --> T2["Think Step 2\n'Now I can conclude...'"]
+        T2 --> A2[Answer]
+    end
 ```
 
 ### Key Reasoning Models
@@ -127,17 +122,13 @@ Yes, 9677 is a prime number.
 
 ### Comparison Table
 
-```
-┌──────────────────┬───────────────┬──────────────┬─────────────┐
-│ Feature          │ Standard LLM  │ OpenAI o-ser │ DeepSeek-R1 │
-├──────────────────┼───────────────┼──────────────┼─────────────┤
-│ Thinking visible │ No thinking   │ Hidden       │ Visible     │
-│ Open source      │ Varies        │ No           │ Yes         │
-│ Run locally      │ Some          │ No           │ Yes         │
-│ Cost per query   │ Low           │ High         │ Free/local  │
-│ Best for         │ Simple tasks  │ Hard problems│ Hard probs  │
-└──────────────────┴───────────────┴──────────────┴─────────────┘
-```
+| Feature          | Standard LLM | OpenAI o-series | DeepSeek-R1 |
+|------------------|-------------|-----------------|-------------|
+| Thinking visible | No thinking | Hidden          | Visible     |
+| Open source      | Varies      | No              | Yes         |
+| Run locally      | Some        | No              | Yes         |
+| Cost per query   | Low         | High            | Free/local  |
+| Best for         | Simple tasks| Hard problems   | Hard probs  |
 
 ---
 
@@ -154,17 +145,14 @@ Think of it like a student on an exam:
 - Easy question → answer quickly
 - Hard question → spend more time thinking
 
-```
-┌───────────────────────────────────────────────────────┐
-│           INFERENCE-TIME SCALING                       │
-│                                                       │
-│  Easy Question ──► Low compute ──► Quick answer       │
-│      "Hi!"           (few tokens)                     │
-│                                                       │
-│  Hard Question ──► High compute ──► Detailed answer   │
-│      "Prove P≠NP"   (many thinking tokens)            │
-│                                                       │
-└───────────────────────────────────────────────────────┘
+```mermaid
+graph LR
+    subgraph Easy
+        EQ["Easy Question\n'Hi!'"] --> LC["Low compute\n(few tokens)"] --> QA[Quick answer]
+    end
+    subgraph Hard
+        HQ["Hard Question\n'Prove P≠NP'"] --> HC["High compute\n(many thinking tokens)"] --> DA[Detailed answer]
+    end
 ```
 
 **Why it matters:** Instead of making a bigger model (expensive to train), you can make
@@ -205,19 +193,11 @@ Think step by step."""
 
 **How CoT works:**
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                                                             │
-│  "Think step by step"                                       │
-│         │                                                   │
-│         ▼                                                   │
-│  ┌─────────────┐    ┌─────────────┐    ┌─────────────┐     │
-│  │  Step 1:    │───►│  Step 2:    │───►│  Step 3:    │     │
-│  │  Identify   │    │  Calculate  │    │  Conclude   │     │
-│  │  the parts  │    │  each part  │    │  final ans  │     │
-│  └─────────────┘    └─────────────┘    └─────────────┘     │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+graph LR
+    P["'Think step by step'"] --> S1["Step 1:\nIdentify the parts"]
+    S1 --> S2["Step 2:\nCalculate each part"]
+    S2 --> S3["Step 3:\nConclude final answer"]
 ```
 
 **Types of CoT:**
@@ -247,25 +227,15 @@ A:"""
 
 Like asking 10 different people the same question and going with the majority answer.
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│              PARALLEL SAMPLING                               │
-│                                                             │
-│                    Question                                  │
-│                       │                                     │
-│          ┌────────────┼────────────┐                        │
-│          ▼            ▼            ▼                        │
-│     ┌────────┐   ┌────────┐   ┌────────┐                   │
-│     │Sample 1│   │Sample 2│   │Sample 3│  (independent)     │
-│     │Ans: 42 │   │Ans: 42 │   │Ans: 37 │                   │
-│     └────────┘   └────────┘   └────────┘                   │
-│          │            │            │                        │
-│          └────────────┼────────────┘                        │
-│                       ▼                                     │
-│               MAJORITY VOTE                                 │
-│               Final Answer: 42                              │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    Q[Question] --> S1["Sample 1\nAns: 42"]
+    Q --> S2["Sample 2\nAns: 42"]
+    Q --> S3["Sample 3\nAns: 37"]
+    S1 --> V[Majority Vote]
+    S2 --> V
+    S3 --> V
+    V --> F["Final Answer: 42"]
 ```
 
 ```python
@@ -298,16 +268,12 @@ def parallel_sampling(client, question, num_samples=5):
 
 Like writing an essay draft, then revising it multiple times.
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│             SEQUENTIAL SAMPLING                              │
-│                                                             │
-│  Question ──► Draft 1 ──► Critique ──► Draft 2 ──► Final   │
-│                              │                              │
-│                    "What's wrong                             │
-│                     with this?"                              │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+graph LR
+    Q[Question] --> D1[Draft 1]
+    D1 --> C["Critique\n'What's wrong with this?'"]
+    C --> D2[Draft 2]
+    D2 --> F[Final Answer]
 ```
 
 ```python
@@ -343,26 +309,24 @@ Evaluate each branch and pursue the most promising ones.
 
 This is more powerful than linear CoT because the model can *backtrack* if a path isn't working.
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                  TREE OF THOUGHTS                            │
-│                                                             │
-│                      Problem                                │
-│                     /   |   \                               │
-│                    /    |    \                               │
-│              Thought  Thought  Thought                      │
-│               A        B        C                           │
-│              /  \      |       / \                          │
-│            A1   A2    B1     C1   C2                        │
-│            ✗    ✓      ✗      ✓    ✗                        │
-│                 │                   │                        │
-│                 ▼                   ▼                        │
-│              Answer             Answer                      │
-│              (best!)            (good)                       │
-│                                                             │
-│  ✓ = promising (continue)    ✗ = dead end (prune)           │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    P[Problem] --> A[Thought A]
+    P --> B[Thought B]
+    P --> C[Thought C]
+    A --> A1["A1 ✗ dead end"]
+    A --> A2["A2 ✓ promising"]
+    B --> B1["B1 ✗ dead end"]
+    C --> C1["C1 ✓ promising"]
+    C --> C2["C2 ✗ dead end"]
+    A2 --> ANS1["Answer (best!)"]
+    C1 --> ANS2["Answer (good)"]
+
+    style A1 fill:#f99
+    style B1 fill:#f99
+    style C2 fill:#f99
+    style A2 fill:#9f9
+    style C1 fill:#9f9
 ```
 
 ```python
@@ -457,22 +421,17 @@ Based on this reasoning, provide a clear final answer."""
 **Core Idea:** Generate many candidate answers, then use a separate "verifier" model
 to check which one is correct.
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│            SEARCH AGAINST A VERIFIER                         │
-│                                                             │
-│  Generator                         Verifier                 │
-│  ┌────────┐                        ┌────────────┐           │
-│  │Generate│──► Candidate 1 ──────► │            │           │
-│  │many    │──► Candidate 2 ──────► │ Check each │──► Best   │
-│  │answers │──► Candidate 3 ──────► │ answer     │   answer  │
-│  │        │──► Candidate 4 ──────► │            │           │
-│  └────────┘                        └────────────┘           │
-│                                                             │
-│  "Here are 4 possible        "Answer 2 has the             │
-│   solutions..."               correct logic."               │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+graph LR
+    G["Generator\n'Here are 4 possible solutions...'"] --> C1[Candidate 1]
+    G --> C2[Candidate 2]
+    G --> C3[Candidate 3]
+    G --> C4[Candidate 4]
+    C1 --> V["Verifier\nCheck each answer"]
+    C2 --> V
+    C3 --> V
+    C4 --> V
+    V --> B["Best Answer\n'Answer 2 has the correct logic.'"]
 ```
 
 ```python
@@ -529,24 +488,18 @@ Understanding them helps you pick the right model and understand their strengths
 **Core Idea:** Train the model on examples of good reasoning. If it gets an answer
 wrong, show it the correct answer and ask it to generate reasoning that leads there.
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    STaR METHOD                               │
-│                                                             │
-│  Step 1: Model tries to solve problems                      │
-│          "Q: ... → Let me think... → Answer: X"            │
-│                                                             │
-│  Step 2: Check answers                                      │
-│          ✓ Correct? → Save the reasoning as training data   │
-│          ✗ Wrong?   → Give hint (correct answer)            │
-│                       → Model generates new reasoning       │
-│                       → Save that reasoning too             │
-│                                                             │
-│  Step 3: Fine-tune model on all the good reasoning          │
-│                                                             │
-│  Step 4: Repeat! (Model gets better each round)             │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    S1["Step 1: Model tries to solve problems\n'Q: ... → Let me think... → Answer: X'"]
+    S1 --> S2{Step 2: Check answers}
+    S2 -->|"✓ Correct"| SAVE1[Save reasoning as training data]
+    S2 -->|"✗ Wrong"| HINT[Give hint with correct answer]
+    HINT --> REGEN[Model generates new reasoning]
+    REGEN --> SAVE2[Save that reasoning too]
+    SAVE1 --> S3[Step 3: Fine-tune model on all good reasoning]
+    SAVE2 --> S3
+    S3 --> S4["Step 4: Repeat! (model gets better each round)"]
+    S4 -.-> S1
 ```
 
 **Simple analogy:** A student solves practice problems. For ones they get right, they
@@ -583,29 +536,12 @@ def star_training_loop(model, problems):
 **Core Idea:** Instead of showing the model *how* to reason, reward it when it gets
 the right answer and let it figure out reasoning strategies on its own.
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│         REINFORCEMENT LEARNING WITH VERIFIER                 │
-│                                                             │
-│            ┌──────────┐                                     │
-│            │  Model   │                                     │
-│            │generates │                                     │
-│            │ solution │                                     │
-│            └────┬─────┘                                     │
-│                 │                                           │
-│                 ▼                                           │
-│            ┌──────────┐         ┌──────────┐               │
-│            │ Verifier │────────►│  Reward  │               │
-│            │ (checks  │         │  Signal  │               │
-│            │  answer) │         │  +1 / -1 │               │
-│            └──────────┘         └────┬─────┘               │
-│                                      │                     │
-│                                      ▼                     │
-│                              Model updates its             │
-│                              strategy to get               │
-│                              more rewards                  │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    M[Model generates solution] --> V[Verifier checks answer]
+    V --> R["Reward Signal\n+1 / -1"]
+    R --> U[Model updates strategy\nto get more rewards]
+    U -.-> M
 ```
 
 This is how DeepSeek-R1 was trained! The model learned reasoning strategies (like
@@ -621,20 +557,18 @@ Two ways to evaluate model responses:
 **PRM (Process Reward Model):** Checks each reasoning step.
 - "Step 1 correct? ✓ Step 2 correct? ✓ Step 3 wrong? ✗"
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                                                             │
-│  ORM (Outcome):           PRM (Process):                    │
-│                                                             │
-│  Step 1: 5+3=8            Step 1: 5+3=8  ✓ (+0.3)          │
-│  Step 2: 8×2=16           Step 2: 8×2=16 ✓ (+0.3)          │
-│  Step 3: 16-4=12          Step 3: 16-4=12 ✓ (+0.3)         │
-│  Answer: 12 ✓ (+1.0)      Answer: 12 ✓ (+0.1)              │
-│                                                             │
-│  Only cares about          Rewards each correct step        │
-│  the final answer          (catches errors earlier)         │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    subgraph ORM["ORM (Outcome) — Only cares about final answer"]
+        O1["Step 1: 5+3=8"] --> O2["Step 2: 8×2=16"]
+        O2 --> O3["Step 3: 16-4=12"]
+        O3 --> OA["Answer: 12 ✓ (+1.0)"]
+    end
+    subgraph PRM["PRM (Process) — Rewards each correct step"]
+        P1["Step 1: 5+3=8 ✓ (+0.3)"] --> P2["Step 2: 8×2=16 ✓ (+0.3)"]
+        P2 --> P3["Step 3: 16-4=12 ✓ (+0.3)"]
+        P3 --> PA["Answer: 12 ✓ (+0.1)"]
+    end
 ```
 
 **PRM is better because:**
@@ -646,21 +580,13 @@ Two ways to evaluate model responses:
 
 **Core Idea:** Train the model to critique and improve its own outputs.
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│               SELF-REFINEMENT                                │
-│                                                             │
-│  ┌──────────┐    ┌──────────┐    ┌──────────┐              │
-│  │ Generate │───►│ Critique │───►│ Refine   │──► Output    │
-│  │ initial  │    │ own work │    │ based on │              │
-│  │ answer   │    │          │    │ critique │              │
-│  └──────────┘    └──────────┘    └──────────┘              │
-│                                                             │
-│  "Here's my        "Wait, I made     "Let me fix           │
-│   first try"        an error in       that step"           │
-│                     step 2"                                 │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+graph LR
+    G["Generate initial answer\n'Here's my first try'"]
+    G --> C["Critique own work\n'Wait, I made an error in step 2'"]
+    C --> R["Refine based on critique\n'Let me fix that step'"]
+    R --> O[Output]
+    R -.->|iterate| C
 ```
 
 During training, the model learns to:
@@ -673,28 +599,18 @@ During training, the model learns to:
 **Core Idea:** Instead of needing external search procedures (like Tree of Thoughts
 run by code), train the model to do that exploration *internally* in its own thinking.
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│            EXTERNAL vs INTERNALIZED SEARCH                   │
-│                                                             │
-│  EXTERNAL (Traditional):                                    │
-│  ┌──────┐  Python code controls   ┌──────┐                 │
-│  │Model │◄───── branching and ────►│Model │                 │
-│  │Call 1│      evaluation          │Call 2│                 │
-│  └──────┘                          └──────┘                 │
-│                                                             │
-│  INTERNALIZED (Meta-CoT):                                   │
-│  ┌────────────────────────────────────────┐                 │
-│  │ Model (single call)                    │                 │
-│  │                                        │                 │
-│  │ "Let me try approach A...              │                 │
-│  │  Hmm, that leads to contradiction.     │                 │
-│  │  Let me try approach B instead...      │                 │
-│  │  Yes! This works because..."           │                 │
-│  │                                        │                 │
-│  └────────────────────────────────────────┘                 │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    subgraph External["External Search (Traditional)"]
+        direction LR
+        PC["Python code controls\nbranching & evaluation"] --> MC1[Model Call 1]
+        PC --> MC2[Model Call 2]
+    end
+    subgraph Internalized["Internalized Search (Meta-CoT)"]
+        direction LR
+        M["Model (single call)"] --> TA["Try approach A...\n→ leads to contradiction"]
+        TA --> TB["Try approach B instead...\n→ Yes! This works!"]
+    end
 ```
 
 This is what OpenAI's o-series models do — they've been trained to explore, backtrack,
@@ -775,20 +691,16 @@ print(response.choices[0].message.content)
 
 ### Hardware Requirements
 
-```
-┌───────────────────────────────────────────────────────────┐
-│  Model Size    │  RAM Needed  │  Good For                  │
-├───────────────────────────────────────────────────────────┤
-│  1.5B params   │  ~2 GB       │  Simple tasks, testing     │
-│  8B params     │  ~6 GB       │  General use, good quality │
-│  14B params    │  ~10 GB      │  Better reasoning          │
-│  32B params    │  ~20 GB      │  Near-API quality          │
-│  70B params    │  ~40 GB      │  Best local quality        │
-└───────────────────────────────────────────────────────────┘
+| Model Size   | RAM Needed | Good For                  |
+|-------------|------------|---------------------------|
+| 1.5B params | ~2 GB      | Simple tasks, testing     |
+| 8B params   | ~6 GB      | General use, good quality |
+| 14B params  | ~10 GB     | Better reasoning          |
+| 32B params  | ~20 GB     | Near-API quality          |
+| 70B params  | ~40 GB     | Best local quality        |
 
 Note: GPU (VRAM) is preferred but CPU-only works (just slower).
 A gaming GPU with 8GB+ VRAM handles 8B models well.
-```
 
 ---
 

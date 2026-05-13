@@ -6,6 +6,14 @@ The capstone project is your opportunity to bring together everything you've lea
 
 ## How It Works
 
+```mermaid
+flowchart LR
+    A[🎯 Choose Project] --> B[🔨 Build]
+    B --> C[🔄 Iterate]
+    C --> B
+    C --> D[🎤 Demo Day]
+```
+
 ### 1. Choose Your Project
 
 Pick your own idea, or start from one of these suggestions:
@@ -55,6 +63,16 @@ Present your project! Your demo should include:
 - **Live demo**: Show the happy path + one edge case
 - **Architecture overview**: Quick diagram of how components connect
 - **Lessons learned**: What was hardest? What would you do differently?
+
+```mermaid
+graph TD
+    UI[Demo UI\nGradio / Streamlit] --> Core[Core Logic]
+    Core --> LLM[LLM API]
+    Core --> RAG[RAG Pipeline]
+    Core --> Tools[Tool Calling / Agents]
+    RAG --> VDB[(Vector Store)]
+    RAG --> Docs[Documents / Data]
+```
 
 ## Project Structure Template
 

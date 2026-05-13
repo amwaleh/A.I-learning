@@ -4,6 +4,14 @@ A full-stack web app to track your progress through the AI Learning curriculum (
 
 ## Tech Stack
 
+```mermaid
+graph LR
+    Browser[React + Vite\nTailwind CSS] -->|REST API| Server[FastAPI\nSQLAlchemy + JWT]
+    Server --> DB[(SQLite / PostgreSQL)]
+    Docker[Docker Compose] -.->|orchestrates| Browser
+    Docker -.->|orchestrates| Server
+```
+
 - **Backend**: Python FastAPI + SQLAlchemy + JWT auth
 - **Frontend**: React + Vite + Tailwind CSS
 - **Database**: SQLite (dev) / PostgreSQL (prod)

@@ -17,15 +17,10 @@ This guide teaches you how modern AI systems generate images and videos from tex
 
 **No prior knowledge of generative AI is assumed.** We start from the basics.
 
-```
-┌─────────────────────────────────────────────────────┐
-│              Multi-modal Generation                  │
-│                                                     │
-│   Text ──► [AI Model] ──► Image / Video            │
-│                                                     │
-│   "A cat sitting    ──►   🖼️ (generated image)     │
-│    on a rainbow"                                    │
-└─────────────────────────────────────────────────────┘
+```mermaid
+graph LR
+    A["Text: 'A cat sitting on a rainbow'"] --> B["AI Model"]
+    B --> C["🖼️ Image / Video"]
 ```
 
 ---
@@ -40,11 +35,12 @@ A VAE learns to compress data into a small "latent" representation and then reco
 
 **How it works:**
 
-```
-┌──────────┐     ┌────────────┐     ┌──────────┐     ┌────────────┐
-│  Input   │────►│  Encoder   │────►│  Latent  │────►│  Decoder   │────► Output
-│  Image   │     │ (compress) │     │  Space   │     │(reconstruct)│     Image
-└──────────┘     └────────────┘     └──────────┘     └────────────┘
+```mermaid
+graph LR
+    A["Input Image"] --> B["Encoder (compress)"]
+    B --> C["Latent Space"]
+    C --> D["Decoder (reconstruct)"]
+    D --> E["Output Image"]
 ```
 
 **Key idea:** The latent space is a compact, smooth representation. By sampling different points in this space, you can generate new images.
@@ -76,20 +72,17 @@ class VAE:
 
 A GAN uses two networks that compete against each other like a forger and a detective.
 
-```
-┌──────────────────────────────────────────────────────────────┐
-│                        GAN Training                          │
-│                                                              │
-│  Random    ┌───────────┐    Fake     ┌───────────────┐      │
-│  Noise ───►│ Generator │───Image────►│ Discriminator │──► Real/Fake?
-│            └───────────┘             │   (Detective) │      │
-│                                      └───────┬───────┘      │
-│                                              │              │
-│            Real Images ──────────────────────┘              │
-│                                                              │
-│  Generator tries to FOOL the Discriminator                   │
-│  Discriminator tries to CATCH fakes                          │
-└──────────────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    subgraph GAN Training
+        Noise["Random Noise"] --> Gen["Generator"]
+        Gen --> FakeImg["Fake Image"]
+        FakeImg --> Disc["Discriminator (Detective)"]
+        RealImg["Real Images"] --> Disc
+        Disc --> Verdict["Real / Fake?"]
+    end
+    Note1["Generator tries to FOOL the Discriminator"]
+    Note2["Discriminator tries to CATCH fakes"]
 ```
 
 **Key idea:** The Generator gets better at creating realistic images because the Discriminator keeps catching its fakes. Eventually, the Generator produces images so realistic that the Discriminator can't tell them apart from real ones.
@@ -120,19 +113,16 @@ for epoch in range(num_epochs):
 
 Auto-regressive models generate images one piece at a time, like writing a sentence word by word.
 
+```mermaid
+graph LR
+    S1["Step 1: Generate token [1]"] --> S2["Step 2: Generate tokens [1][2]"]
+    S2 --> S3["Step 3: Generate tokens [1][2][3]"]
+    S3 --> S4["..."]
+    S4 --> SN["Step N: Complete image [1][2]...[N]"]
+    style SN fill:#9f9,stroke:#333
 ```
-┌─────────────────────────────────────────────────────┐
-│          Auto-regressive Generation                  │
-│                                                     │
-│  Step 1: Generate pixel/token [1]                   │
-│  Step 2: Generate pixel/token [1][2]                │
-│  Step 3: Generate pixel/token [1][2][3]             │
-│  ...                                                │
-│  Step N: Complete image [1][2][3]...[N]             │
-│                                                     │
-│  Each step depends on ALL previous steps            │
-└─────────────────────────────────────────────────────┘
-```
+
+> Each step depends on **all** previous steps.
 
 **Key idea:** The model predicts the next piece based on everything it's already generated. This is the same principle behind GPT (for text), applied to images.
 
@@ -161,28 +151,23 @@ def generate_image(prompt):
 
 Diffusion models learn to generate images by learning to **remove noise**. This is currently the most successful approach.
 
+```mermaid
+graph LR
+    subgraph Forward Process - Adding Noise
+        A["Clean Image (t=0)"] --> B["Slightly Noisy (t=1)"]
+        B --> C["More Noisy (t=2)"]
+        C --> D["..."]
+        D --> E["Pure Noise (t=T)"]
+    end
+    subgraph Reverse Process - Removing Noise
+        F["Pure Noise (t=T)"] --> G["Less Noisy (t=T-1)"]
+        G --> H["Less Noisy (t=T-2)"]
+        H --> I["..."]
+        I --> J["Clean Image! (t=0)"]
+    end
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                    DIFFUSION MODEL                               │
-│                                                                 │
-│  FORWARD PROCESS (Training - Adding Noise):                     │
-│                                                                 │
-│  Clean Image ──► Slightly ──► More ──► ... ──► Pure Noise      │
-│  (step 0)        Noisy        Noisy           (step T)          │
-│                  (step 1)    (step 2)                            │
-│                                                                 │
-│  ─────────────────────────────────────────────────────────────  │
-│                                                                 │
-│  REVERSE PROCESS (Generation - Removing Noise):                 │
-│                                                                 │
-│  Pure Noise ──► Less ──► Less ──► ... ──► Clean Image!          │
-│  (step T)       Noisy    Noisy           (step 0)               │
-│                 (step T-1)(step T-2)                             │
-│                                                                 │
-│  The model learns: "Given this noisy image, what does the       │
-│  slightly less noisy version look like?"                        │
-└─────────────────────────────────────────────────────────────────┘
-```
+
+> The model learns: "Given this noisy image, what does the slightly less noisy version look like?"
 
 **Simple analogy:** Imagine you have a clear photo and you gradually add TV static to it until it's all noise. A diffusion model learns to reverse this process — starting from pure static and gradually revealing a clear image.
 
@@ -219,17 +204,14 @@ def generate():
 
 ### Comparison Table
 
-```
-┌────────────────┬──────────┬───────────┬──────────┬──────────────┐
-│    Method      │ Quality  │ Diversity │  Speed   │  Training    │
-├────────────────┼──────────┼───────────┼──────────┼──────────────┤
-│ VAE            │ Medium   │ High      │ Fast     │ Stable       │
-│ GAN            │ High     │ Medium    │ Fast     │ Unstable     │
-│ Auto-regressive│ High     │ High      │ Slow     │ Stable       │
-│ Diffusion      │ Highest  │ Highest   │ Slow*    │ Very Stable  │
-└────────────────┴──────────┴───────────┴──────────┴──────────────┘
-* Can be accelerated with fewer steps or distillation
-```
+| Method | Quality | Diversity | Speed | Training |
+|---|---|---|---|---|
+| VAE | Medium | High | Fast | Stable |
+| GAN | High | Medium | Fast | Unstable |
+| Auto-regressive | High | High | Slow | Stable |
+| Diffusion | Highest | Highest | Slow* | Very Stable |
+
+\* Can be accelerated with fewer steps or distillation
 
 ---
 
@@ -241,21 +223,21 @@ Now let's dive deep into how text-to-image systems work, focusing on diffusion-b
 
 To train a T2I model, you need millions of image-text pairs.
 
+```mermaid
+graph LR
+    A["Raw Data"] --> B["Filter"]
+    B --> C["Clean"]
+    C --> D["Augment"]
+    D --> E["Ready"]
 ```
-┌─────────────────────────────────────────────────────────┐
-│              DATA PREPARATION PIPELINE                    │
-│                                                         │
-│  Raw Data ──► Filter ──► Clean ──► Augment ──► Ready    │
-│                                                         │
-│  Steps:                                                 │
-│  1. Collect image-text pairs (e.g., LAION-5B)          │
-│  2. Filter out low-quality images (resolution, blur)    │
-│  3. Filter out inappropriate content                    │
-│  4. Clean/improve text captions                         │
-│  5. Resize images to consistent dimensions              │
-│  6. Optionally: re-caption with a VLM (e.g., LLaVA)   │
-└─────────────────────────────────────────────────────────┘
-```
+
+**Steps:**
+1. Collect image-text pairs (e.g., LAION-5B)
+2. Filter out low-quality images (resolution, blur)
+3. Filter out inappropriate content
+4. Clean/improve text captions
+5. Resize images to consistent dimensions
+6. Optionally: re-caption with a VLM (e.g., LLaVA)
 
 **Key considerations:**
 
@@ -296,34 +278,20 @@ Two main architectures are used for the denoising network:
 
 The U-Net is the traditional workhorse of diffusion models (used in Stable Diffusion 1.x and 2.x).
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                      U-NET ARCHITECTURE                          │
-│                                                                 │
-│  Input: Noisy latent + timestep + text embedding                │
-│                                                                 │
-│  ┌─────┐     ┌─────┐     ┌─────┐                              │
-│  │64x64│────►│32x32│────►│16x16│──┐   (Encoder - Downsample)  │
-│  └─────┘     └─────┘     └─────┘  │                           │
-│     │           │           │      ▼                           │
-│     │           │           │   ┌─────┐                        │
-│     │           │           │   │8x8  │  (Bottleneck)          │
-│     │           │           │   └──┬──┘                        │
-│     │           │           │      │                           │
-│     │           │           ▼      │                           │
-│     │           │        ┌─────┐   │   (Decoder - Upsample)   │
-│     │           │        │16x16│◄──┘                           │
-│     │           ▼        └─────┘                               │
-│     │        ┌─────┐        │                                  │
-│     │        │32x32│◄───────┘   ◄── Skip connections           │
-│     ▼        └─────┘                                           │
-│  ┌─────┐        │                                              │
-│  │64x64│◄───────┘                                              │
-│  └─────┘                                                       │
-│     │                                                          │
-│     ▼                                                          │
-│  Output: Predicted noise                                        │
-└─────────────────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    Input["Input: Noisy latent + timestep + text embedding"]
+    Input --> E1["64×64"]
+    E1 --> E2["32×32"]
+    E2 --> E3["16×16"]
+    E3 --> BN["8×8 (Bottleneck)"]
+    BN --> D3["16×16"]
+    D3 --> D2["32×32"]
+    D2 --> D1["64×64"]
+    D1 --> Output["Output: Predicted noise"]
+    E1 -. "Skip connection" .-> D1
+    E2 -. "Skip connection" .-> D2
+    E3 -. "Skip connection" .-> D3
 ```
 
 **Key features of U-Net:**
@@ -348,39 +316,13 @@ class UNetBlock:
 
 DiT replaces the U-Net with a Transformer — the same architecture behind GPT and BERT. This is the newer, more scalable approach (used in Stable Diffusion 3, DALL·E 3, Sora).
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    DiT ARCHITECTURE                              │
-│                                                                 │
-│  Input: Noisy latent image                                      │
-│           │                                                     │
-│           ▼                                                     │
-│  ┌─────────────────┐                                           │
-│  │ Patchify (split │  Split image into patches (like words)     │
-│  │ into patches)   │  64x64 image ──► 256 patches of 4x4      │
-│  └────────┬────────┘                                           │
-│           │                                                     │
-│           ▼                                                     │
-│  ┌─────────────────┐                                           │
-│  │ + Position Emb  │  Tell model WHERE each patch is            │
-│  │ + Time Emb      │  Tell model current noise level            │
-│  │ + Text Emb      │  Tell model WHAT to generate               │
-│  └────────┬────────┘                                           │
-│           │                                                     │
-│           ▼                                                     │
-│  ┌─────────────────┐                                           │
-│  │  Transformer    │  ×N layers                                 │
-│  │  Block          │  Self-attention + Cross-attention + FFN    │
-│  └────────┬────────┘                                           │
-│           │                                                     │
-│           ▼                                                     │
-│  ┌─────────────────┐                                           │
-│  │  Unpatchify     │  Reassemble patches into image             │
-│  └────────┬────────┘                                           │
-│           │                                                     │
-│           ▼                                                     │
-│  Output: Predicted noise (or velocity)                          │
-└─────────────────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    Input["Input: Noisy latent image"] --> Patch["Patchify (split into patches)<br/>64×64 image → 256 patches of 4×4"]
+    Patch --> Embed["+ Position Emb + Time Emb + Text Emb"]
+    Embed --> TB["Transformer Block ×N<br/>Self-attention + Cross-attention + FFN"]
+    TB --> Unpatch["Unpatchify (reassemble patches into image)"]
+    Unpatch --> Output["Output: Predicted noise (or velocity)"]
 ```
 
 **Why DiT over U-Net?**
@@ -415,22 +357,15 @@ class DiTBlock:
 
 The forward process gradually destroys an image by adding Gaussian noise over T timesteps.
 
+```mermaid
+graph LR
+    T0["🐱 Clean (t=0)"] --> T250["🐱~ A bit noisy (t=250)"]
+    T250 --> T500["~~ Noisy (t=500)"]
+    T500 --> T750[":: Very noisy (t=750)"]
+    T750 --> T1000[":::: Pure noise (t=1000)"]
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                  FORWARD PROCESS                             │
-│                                                             │
-│  t=0          t=250        t=500        t=750      t=1000  │
-│  ┌────┐      ┌────┐      ┌────┐      ┌────┐      ┌────┐  │
-│  │🐱  │ ──►  │🐱~ │ ──►  │ ~~ │ ──►  │ :: │ ──►  │::::│  │
-│  │cat │      │fuzz│      │blur│      │noiz│      │pure│  │
-│  └────┘      └────┘      └────┘      └────┘      └────┘  │
-│  (clean)   (a bit noisy) (noisy)  (very noisy) (all noise)│
-│                                                             │
-│  Math: x_t = √(ᾱ_t) · x_0 + √(1-ᾱ_t) · ε                │
-│  where ε ~ N(0, I) is random noise                         │
-│  and ᾱ_t is a noise schedule (decreases over time)         │
-└─────────────────────────────────────────────────────────────┘
-```
+
+> **Math:** x_t = √(ᾱ_t) · x_0 + √(1-ᾱ_t) · ε, where ε ~ N(0, I) is random noise and ᾱ_t is a noise schedule (decreases over time)
 
 **The noise schedule** (ᾱ_t) controls how quickly noise is added:
 - At t=0: ᾱ_t ≈ 1 (almost no noise)
@@ -465,26 +400,20 @@ def forward_process(x_0, t, noise_schedule):
 
 The backward process is what the model actually **learns**. Given a noisy image, predict the noise that was added.
 
+```mermaid
+graph TD
+    A["1. Take a clean image x_0"] --> B["2. Pick a random timestep t"]
+    B --> C["3. Add noise: x_t = √ᾱ_t · x_0 + √(1-ᾱ_t) · ε"]
+    C --> D["4. Model predicts: ε_θ(x_t, t, text)"]
+    D --> E["5. Loss = ||ε - ε_θ||² (MSE)"]
+
+    subgraph Denoising Model
+        X["x_t + t + text"] --> Model["U-Net or DiT"]
+        Model --> Pred["Predicted noise ε_θ"]
+    end
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                  BACKWARD PROCESS (TRAINING)                  │
-│                                                             │
-│  1. Take a clean image x_0                                  │
-│  2. Pick a random timestep t                                │
-│  3. Add noise: x_t = √ᾱ_t · x_0 + √(1-ᾱ_t) · ε          │
-│  4. Model predicts: ε_θ(x_t, t, text)                      │
-│  5. Loss = ||ε - ε_θ||²  (MSE between real & predicted)    │
-│                                                             │
-│  ┌────┐                                                     │
-│  │x_t │──► [Denoising Model] ──► predicted noise ε_θ       │
-│  │+t  │    (U-Net or DiT)                                   │
-│  │+txt│                                                     │
-│  └────┘                                                     │
-│                                                             │
-│  The model learns: "What noise was added to get this        │
-│  noisy image at this timestep, given this text caption?"    │
-└─────────────────────────────────────────────────────────────┘
-```
+
+> The model learns: "What noise was added to get this noisy image at this timestep, given this text caption?"
 
 ```python
 # Training loop (pseudocode)
@@ -516,40 +445,30 @@ def training_step(model, images, captions, noise_schedule):
 
 During generation, we start from pure noise and iteratively denoise.
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                  SAMPLING (GENERATION)                        │
-│                                                             │
-│  Start: x_T ~ N(0, I)  (pure random noise)                 │
-│                                                             │
-│  For t = T, T-1, ..., 1, 0:                                │
-│    1. Predict noise: ε_θ = model(x_t, t, text)             │
-│    2. Remove predicted noise: x_{t-1} = denoise(x_t, ε_θ)  │
-│    3. (Optionally add small random noise for stochasticity) │
-│                                                             │
-│  Result: x_0 (clean generated image!)                       │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    Start["Start: x_T ~ N(0, I) (pure random noise)"]
+    Start --> Loop["For t = T, T-1, ..., 1, 0:"]
+    Loop --> Step1["1. Predict noise: ε_θ = model(x_t, t, text)"]
+    Step1 --> Step2["2. Remove predicted noise: x_{t-1} = denoise(x_t, ε_θ)"]
+    Step2 --> Step3["3. Optionally add small random noise"]
+    Step3 --> Result["Result: x_0 (clean generated image!)"]
 ```
 
 #### Classifier-Free Guidance (CFG)
 
 CFG is a technique that improves text-image alignment at the cost of some diversity.
 
+```mermaid
+graph LR
+    UC["Unconditional noise"] --> Combine["guided_noise = unconditional + scale × (conditional - unconditional)"]
+    C["Conditional noise"] --> Combine
+    Combine --> Out["Guided noise prediction"]
 ```
-┌─────────────────────────────────────────────────────────────┐
-│              CLASSIFIER-FREE GUIDANCE                         │
-│                                                             │
-│  guided_noise = unconditional_noise +                       │
-│                 guidance_scale * (conditional_noise -        │
-│                                    unconditional_noise)     │
-│                                                             │
-│  guidance_scale = 1.0 ──► No guidance (diverse, may not     │
-│                           match text well)                   │
-│  guidance_scale = 7.5 ──► Standard (good balance)           │
-│  guidance_scale = 20  ──► Strong guidance (matches text     │
-│                           well, but less diverse/saturated)  │
-└─────────────────────────────────────────────────────────────┘
-```
+
+> - **guidance_scale = 1.0** → No guidance (diverse, may not match text well)
+> - **guidance_scale = 7.5** → Standard (good balance)
+> - **guidance_scale = 20** → Strong guidance (matches text well, but less diverse/saturated)
 
 ```python
 # Sampling with classifier-free guidance (pseudocode)
@@ -591,21 +510,13 @@ def sample_with_cfg(model, text_emb, guidance_scale=7.5, num_steps=50):
 
 How do we know if a T2I model is good? We use several metrics:
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                  EVALUATION METRICS                           │
-│                                                             │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐│
-│  │Image Quality│  │  Diversity  │  │Image-Text Alignment ││
-│  │             │  │             │  │                     ││
-│  │ • Sharpness │  │ • Variety   │  │ • Does image match  ││
-│  │ • Realism   │  │ • Coverage  │  │   the text prompt?  ││
-│  │ • No artifacts│ │ • No repeats│  │                     ││
-│  └─────────────┘  └─────────────┘  └─────────────────────┘│
-│                                                             │
-│  Metrics: IS, FID, CLIP Score                               │
-└─────────────────────────────────────────────────────────────┘
-```
+**Evaluation Metrics:**
+
+- **Image Quality** — Sharpness, Realism, No artifacts
+- **Diversity** — Variety, Coverage, No repeats
+- **Image-Text Alignment** — Does the image match the text prompt?
+
+**Key metrics:** IS, FID, CLIP Score
 
 #### Inception Score (IS)
 
@@ -628,46 +539,38 @@ Typical values:
 
 Measures how similar the **distribution** of generated images is to real images.
 
+```mermaid
+graph LR
+    R["Real Images"] --> IN1["Inception Net"] --> RD["Feature Distribution (Real)"]
+    G["Generated Images"] --> IN2["Inception Net"] --> GD["Feature Distribution (Generated)"]
+    RD --> FID["FID = distance between distributions"]
+    GD --> FID
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                     FID SCORE                                │
-│                                                             │
-│  Real Images ──► Inception Net ──► Feature Distribution     │
-│                                         │                   │
-│                                         ├──► FID = distance │
-│                                         │         between   │
-│  Generated   ──► Inception Net ──► Feature Distribution     │
-│  Images                                                     │
-│                                                             │
-│  Lower FID = Better (generated ≈ real)                      │
-│                                                             │
-│  FID = 0    : Perfect (identical distributions)             │
-│  FID < 10   : Excellent                                     │
-│  FID 10-50  : Good                                          │
-│  FID > 50   : Poor                                          │
-└─────────────────────────────────────────────────────────────┘
-```
+
+> - **FID = 0**: Perfect (identical distributions)
+> - **FID < 10**: Excellent
+> - **FID 10–50**: Good
+> - **FID > 50**: Poor
+>
+> Lower FID = Better (generated ≈ real)
 
 #### CLIP Score
 
 Measures how well the generated image matches the input text prompt.
 
+```mermaid
+graph LR
+    T["Text: 'A red car on a beach'"] --> CLIP["CLIP Model"]
+    I["Generated Image"] --> CLIP
+    CLIP --> TE["Text Embedding"]
+    CLIP --> IE["Image Embedding"]
+    TE --> CS["Cosine Similarity"]
+    IE --> CS
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    CLIP SCORE                                 │
-│                                                             │
-│  Text: "A red car   ┌──────────┐   Text                    │
-│  on a beach"  ─────►│  CLIP    │──►Embedding──┐            │
-│                      │  Model   │              │            │
-│  Generated    ─────►│          │──►Image   ───┼─► Cosine   │
-│  Image               └──────────┘  Embedding  │   Similarity│
-│                                               │            │
-│  CLIP Score = cosine_similarity(text_emb, image_emb)       │
-│                                                             │
-│  Higher = Better alignment between text and image           │
-│  Typical range: 0.25 - 0.35 for good models                │
-└─────────────────────────────────────────────────────────────┘
-```
+
+> CLIP Score = cosine_similarity(text_emb, image_emb)
+>
+> Higher = Better alignment between text and image. Typical range: 0.25–0.35 for good models.
 
 ```python
 # Computing CLIP Score (pseudocode)
@@ -691,66 +594,39 @@ def compute_clip_score(images, prompts):
 
 Text-to-video extends text-to-image by adding the **temporal dimension** — generating coherent sequences of frames.
 
+```mermaid
+graph LR
+    subgraph T2I
+        A1["Text"] --> B1["Generate 1 image<br/>[H × W × 3]"]
+    end
+    subgraph T2V
+        A2["Text"] --> B2["Generate F frames<br/>[F × H × W × 3]"]
+    end
 ```
-┌─────────────────────────────────────────────────────────────┐
-│               TEXT-TO-IMAGE vs TEXT-TO-VIDEO                  │
-│                                                             │
-│  T2I: Generate 1 image         [H × W × 3]                 │
-│  T2V: Generate F frames        [F × H × W × 3]             │
-│                                                             │
-│  Challenge: Frames must be:                                  │
-│    ✓ Individually high-quality                               │
-│    ✓ Temporally consistent (smooth motion)                   │
-│    ✓ Physically plausible (objects move naturally)            │
-└─────────────────────────────────────────────────────────────┘
-```
+
+> **Challenge:** Frames must be individually high-quality, temporally consistent (smooth motion), and physically plausible (objects move naturally).
 
 ### Latent Diffusion Modeling (LDM) and Compression Networks
 
 Videos are HUGE. A 5-second video at 30fps and 1080p = 5 × 30 × 1920 × 1080 × 3 ≈ 933 million values! We must compress before diffusing.
 
+```mermaid
+graph LR
+    Raw["Raw Video<br/>[16 × 1080 × 1920 × 3]<br/>≈149M values"] --> VAE["VAE Encoder"]
+    VAE --> Latent["Latent Video<br/>[4 × 135 × 240 × 4]<br/>≈518K values"]
 ```
-┌─────────────────────────────────────────────────────────────┐
-│            VIDEO COMPRESSION PIPELINE                         │
-│                                                             │
-│  Raw Video                    Latent Video                   │
-│  [F × H × W × 3]             [F' × H' × W' × C]           │
-│                                                             │
-│  16 × 1080 × 1920 × 3  ──►  4 × 135 × 240 × 4            │
-│  (≈149M values)         VAE   (≈518K values)               │
-│                        Encoder                              │
-│                                                             │
-│  Compression ratio: ~288x !!                                │
-│                                                             │
-│  The VAE compresses:                                        │
-│    • Spatially: 8x in height and width                      │
-│    • Temporally: 4x in frames                               │
-│    • Channels: 3 RGB → 4 latent channels                    │
-└─────────────────────────────────────────────────────────────┘
-```
+
+> **Compression ratio: ~288×!** The VAE compresses spatially (8× in height and width), temporally (4× in frames), and channels (3 RGB → 4 latent channels).
 
 **3D VAE for Videos:**
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    3D VAE                                     │
-│                                                             │
-│  Video frames:     [16, 3, 1080, 1920]                      │
-│       │                                                     │
-│       ▼                                                     │
-│  3D Encoder (spatial + temporal compression)                 │
-│       │                                                     │
-│       ▼                                                     │
-│  Latent:          [4, 4, 135, 240]                          │
-│       │                                                     │
-│       ▼ (Diffusion happens HERE in latent space)            │
-│       │                                                     │
-│       ▼                                                     │
-│  3D Decoder (spatial + temporal decompression)               │
-│       │                                                     │
-│       ▼                                                     │
-│  Reconstructed:   [16, 3, 1080, 1920]                       │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    V["Video frames [16, 3, 1080, 1920]"] --> Enc["3D Encoder<br/>(spatial + temporal compression)"]
+    Enc --> L["Latent [4, 4, 135, 240]"]
+    L --> Diff["Diffusion happens HERE<br/>in latent space"]
+    Diff --> Dec["3D Decoder<br/>(spatial + temporal decompression)"]
+    Dec --> R["Reconstructed [16, 3, 1080, 1920]"]
 ```
 
 ---
@@ -759,33 +635,30 @@ Videos are HUGE. A 5-second video at 30fps and 1080p = 5 × 30 × 1920 × 1080 �
 
 Video data preparation is more complex than images.
 
+```mermaid
+graph LR
+    Raw["Raw Videos"] --> Filter["Filter"] --> Std["Standardize"] --> Cache["Cache"] --> Train["Train"]
 ```
-┌─────────────────────────────────────────────────────────────┐
-│              VIDEO DATA PIPELINE                              │
-│                                                             │
-│  Raw Videos ──► Filter ──► Standardize ──► Cache ──► Train  │
-│                                                             │
-│  1. FILTERING                                               │
-│     • Remove static/frozen videos                           │
-│     • Remove overly fast/chaotic motion                     │
-│     • Filter by aesthetic quality per frame                  │
-│     • Remove watermarked content                            │
-│     • Scene detection (split at cuts)                       │
-│     • Optical flow analysis (motion quality)                │
-│                                                             │
-│  2. STANDARDIZATION                                         │
-│     • Fixed FPS (e.g., 24 fps)                             │
-│     • Fixed resolution (e.g., 720p or 1080p)               │
-│     • Fixed duration (e.g., 2-10 seconds)                  │
-│     • Aspect ratio bucketing                                │
-│                                                             │
-│  3. VIDEO LATENT CACHING                                    │
-│     • Pre-encode all videos through 3D VAE                  │
-│     • Store latent representations on disk                  │
-│     • Avoids re-encoding during training (saves GPU time)   │
-│     • Also cache text embeddings                            │
-└─────────────────────────────────────────────────────────────┘
-```
+
+**1. Filtering:**
+- Remove static/frozen videos
+- Remove overly fast/chaotic motion
+- Filter by aesthetic quality per frame
+- Remove watermarked content
+- Scene detection (split at cuts)
+- Optical flow analysis (motion quality)
+
+**2. Standardization:**
+- Fixed FPS (e.g., 24 fps)
+- Fixed resolution (e.g., 720p or 1080p)
+- Fixed duration (e.g., 2–10 seconds)
+- Aspect ratio bucketing
+
+**3. Video Latent Caching:**
+- Pre-encode all videos through 3D VAE
+- Store latent representations on disk
+- Avoids re-encoding during training (saves GPU time)
+- Also cache text embeddings
 
 ```python
 # Video data preparation (pseudocode)
@@ -826,75 +699,38 @@ def prepare_video_dataset(raw_videos):
 
 The video DiT extends the image DiT by adding **temporal attention** — allowing the model to understand motion and change over time.
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│              VIDEO DiT ARCHITECTURE                           │
-│                                                             │
-│  Input: Noisy video latent [F, H, W, C]                     │
-│           │                                                 │
-│           ▼                                                 │
-│  ┌─────────────────────────┐                               │
-│  │ 3D Patchify             │ Split into space-time patches  │
-│  │ (spatial + temporal)    │ [F×H×W patches]                │
-│  └───────────┬─────────────┘                               │
-│              │                                              │
-│              ▼                                              │
-│  ┌─────────────────────────┐                               │
-│  │ + 3D Position Embedding │ Where + When each patch is     │
-│  └───────────┬─────────────┘                               │
-│              │                                              │
-│              ▼                                              │
-│  ┌─────────────────────────────────────────┐               │
-│  │         Video Transformer Block          │ × N           │
-│  │                                         │               │
-│  │  1. Spatial Self-Attention              │               │
-│  │     (patches in same frame attend       │               │
-│  │      to each other)                     │               │
-│  │                                         │               │
-│  │  2. Temporal Self-Attention             │               │
-│  │     (same spatial position across       │               │
-│  │      frames attends to each other)      │               │
-│  │                                         │               │
-│  │  3. Cross-Attention with Text           │               │
-│  │     (patches attend to text tokens)     │               │
-│  │                                         │               │
-│  │  4. Feed-Forward Network                │               │
-│  └───────────┬─────────────────────────────┘               │
-│              │                                              │
-│              ▼                                              │
-│  ┌─────────────────────────┐                               │
-│  │ Unpatchify              │ Reassemble video               │
-│  └───────────┬─────────────┘                               │
-│              │                                              │
-│              ▼                                              │
-│  Output: Predicted noise for video                          │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    Input["Input: Noisy video latent [F, H, W, C]"] --> Patch["3D Patchify<br/>(spatial + temporal)<br/>[F×H×W patches]"]
+    Patch --> PosEmb["+ 3D Position Embedding<br/>(Where + When each patch is)"]
+    PosEmb --> VTB["Video Transformer Block ×N"]
+    subgraph VTB_detail["Video Transformer Block"]
+        S1["1. Spatial Self-Attention<br/>(patches in same frame attend to each other)"]
+        S2["2. Temporal Self-Attention<br/>(same spatial position across frames)"]
+        S3["3. Cross-Attention with Text<br/>(patches attend to text tokens)"]
+        S4["4. Feed-Forward Network"]
+        S1 --> S2 --> S3 --> S4
+    end
+    VTB --> Unpatch["Unpatchify<br/>(reassemble video)"]
+    Unpatch --> Output["Output: Predicted noise for video"]
 ```
 
 **Factorized attention** is key — instead of having all patches attend to all other patches (which would be computationally impossible for videos), we separate spatial and temporal attention:
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│          FACTORIZED ATTENTION                                │
-│                                                             │
-│  Frame 1:  [A1] [B1] [C1]                                  │
-│  Frame 2:  [A2] [B2] [C2]                                  │
-│  Frame 3:  [A3] [B3] [C3]                                  │
-│                                                             │
-│  Spatial attention (within each frame):                      │
-│    A1 ↔ B1 ↔ C1    (Frame 1 patches talk to each other)    │
-│    A2 ↔ B2 ↔ C2    (Frame 2 patches talk to each other)    │
-│    A3 ↔ B3 ↔ C3    (Frame 3 patches talk to each other)    │
-│                                                             │
-│  Temporal attention (across frames):                         │
-│    A1 ↔ A2 ↔ A3    (Same position across time)             │
-│    B1 ↔ B2 ↔ B3                                            │
-│    C1 ↔ C2 ↔ C3                                            │
-│                                                             │
-│  This is MUCH cheaper than full 3D attention:               │
-│    Full: O(F²×H²×W²)  vs  Factorized: O(F² + H²×W²)      │
-└─────────────────────────────────────────────────────────────┘
-```
+**Factorized Attention**
+
+Consider a grid of patches across 3 frames:
+
+| | Pos A | Pos B | Pos C |
+|---|---|---|---|
+| **Frame 1** | A1 | B1 | C1 |
+| **Frame 2** | A2 | B2 | C2 |
+| **Frame 3** | A3 | B3 | C3 |
+
+- **Spatial attention** (within each frame): A1 ↔ B1 ↔ C1, A2 ↔ B2 ↔ C2, A3 ↔ B3 ↔ C3
+- **Temporal attention** (across frames): A1 ↔ A2 ↔ A3, B1 ↔ B2 ↔ B3, C1 ↔ C2 ↔ C3
+
+This is **much cheaper** than full 3D attention: Full O(F²×H²×W²) vs Factorized O(F² + H²×W²)
 
 ---
 
@@ -902,61 +738,37 @@ The video DiT extends the image DiT by adding **temporal attention** — allowin
 
 Training T2V models is extremely resource-intensive.
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│           LARGE-SCALE TRAINING CHALLENGES                    │
-│                                                             │
-│  Challenge 1: COMPUTE                                       │
-│  • Sora-class models: 1000s of GPUs for weeks               │
-│  • Single video = 100x more computation than single image   │
-│  • Solution: Progressive training (low-res → high-res)      │
-│                                                             │
-│  Challenge 2: MEMORY                                        │
-│  • Video latents are huge even after compression            │
-│  • Solution: Gradient checkpointing, mixed precision,       │
-│              sequence parallelism                            │
-│                                                             │
-│  Challenge 3: DATA                                          │
-│  • Need millions of high-quality video-text pairs           │
-│  • Video captioning is harder than image captioning         │
-│  • Solution: VLMs for auto-captioning, synthetic data       │
-│                                                             │
-│  Challenge 4: TEMPORAL CONSISTENCY                           │
-│  • Flickering, objects disappearing between frames          │
-│  • Solution: Temporal attention, motion conditioning,       │
-│              progressive temporal training                   │
-│                                                             │
-│  Challenge 5: EVALUATION                                    │
-│  • Image metrics don't capture motion quality               │
-│  • Solution: FVD (Fréchet Video Distance), human eval       │
-└─────────────────────────────────────────────────────────────┘
-```
+#### Challenge 1: Compute
+- Sora-class models: 1000s of GPUs for weeks
+- Single video = 100× more computation than single image
+- **Solution:** Progressive training (low-res → high-res)
+
+#### Challenge 2: Memory
+- Video latents are huge even after compression
+- **Solution:** Gradient checkpointing, mixed precision, sequence parallelism
+
+#### Challenge 3: Data
+- Need millions of high-quality video-text pairs
+- Video captioning is harder than image captioning
+- **Solution:** VLMs for auto-captioning, synthetic data
+
+#### Challenge 4: Temporal Consistency
+- Flickering, objects disappearing between frames
+- **Solution:** Temporal attention, motion conditioning, progressive temporal training
+
+#### Challenge 5: Evaluation
+- Image metrics don't capture motion quality
+- **Solution:** FVD (Fréchet Video Distance), human eval
 
 **Progressive training strategy:**
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│           PROGRESSIVE TRAINING                               │
-│                                                             │
-│  Phase 1: Image pre-training                                │
-│    • Train DiT on images (like T2I)                         │
-│    • Model learns spatial understanding                     │
-│    • Cheapest phase                                         │
-│                                                             │
-│  Phase 2: Low-resolution video                              │
-│    • 256×256, 16 frames                                     │
-│    • Add temporal layers, freeze spatial layers             │
-│    • Model learns basic motion                              │
-│                                                             │
-│  Phase 3: High-resolution video                             │
-│    • 512×512 or 1080p, 48+ frames                          │
-│    • Unfreeze all layers, train jointly                     │
-│    • Model learns fine details + long motion                │
-│                                                             │
-│  Phase 4: Quality fine-tuning                               │
-│    • High-quality subset only                               │
-│    • Aesthetic filtering, human preference data             │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    P1["Phase 1: Image pre-training<br/>Train DiT on images (like T2I)<br/>Model learns spatial understanding<br/>Cheapest phase"]
+    P2["Phase 2: Low-resolution video<br/>256×256, 16 frames<br/>Add temporal layers, freeze spatial layers<br/>Model learns basic motion"]
+    P3["Phase 3: High-resolution video<br/>512×512 or 1080p, 48+ frames<br/>Unfreeze all layers, train jointly<br/>Model learns fine details + long motion"]
+    P4["Phase 4: Quality fine-tuning<br/>High-quality subset only<br/>Aesthetic filtering, human preference data"]
+    P1 --> P2 --> P3 --> P4
 ```
 
 ---
@@ -965,44 +777,23 @@ Training T2V models is extremely resource-intensive.
 
 Here's how all the pieces fit together:
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                  TEXT-TO-VIDEO SYSTEM OVERVIEW                        │
-│                                                                     │
-│  ┌──────────────────────────────────────────────────────────────┐   │
-│  │                      INFERENCE PIPELINE                       │   │
-│  │                                                              │   │
-│  │  "A golden retriever     ┌────────────┐                     │   │
-│  │   playing in snow"  ────►│Text Encoder│──► text embeddings   │   │
-│  │                          │(T5 / CLIP) │                     │   │
-│  │                          └────────────┘        │             │   │
-│  │                                                │             │   │
-│  │  Random noise            ┌────────────┐        │             │   │
-│  │  [F×H×W×C]  ────────────│  Video DiT │◄───────┘             │   │
-│  │                          │            │                     │   │
-│  │                          │ Iterative  │                     │   │
-│  │                          │ Denoising  │                     │   │
-│  │                          │ (20-50     │                     │   │
-│  │                          │  steps)    │                     │   │
-│  │                          └─────┬──────┘                     │   │
-│  │                                │                             │   │
-│  │                                ▼                             │   │
-│  │  Denoised latent        ┌────────────┐                     │   │
-│  │  [F'×H'×W'×C] ─────────│3D VAE      │──► Video frames      │   │
-│  │                         │Decoder     │   [F×H×W×3]          │   │
-│  │                         └────────────┘                     │   │
-│  └──────────────────────────────────────────────────────────────┘   │
-│                                                                     │
-│  ┌──────────────────────────────────────────────────────────────┐   │
-│  │                      TRAINING PIPELINE                        │   │
-│  │                                                              │   │
-│  │  Video Dataset ──► Data Prep ──► Latent Caching ──► Train    │   │
-│  │                                                              │   │
-│  │  Loss = MSE(predicted_noise, actual_noise)                   │   │
-│  │                                                              │   │
-│  │  Distributed across 100s-1000s of GPUs                       │   │
-│  └──────────────────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    subgraph Inference Pipeline
+        Prompt["'A golden retriever playing in snow'"] --> TextEnc["Text Encoder (T5 / CLIP)"]
+        TextEnc --> TextEmb["Text embeddings"]
+        Noise["Random noise [F×H×W×C]"] --> DiT["Video DiT<br/>Iterative Denoising<br/>(20–50 steps)"]
+        TextEmb --> DiT
+        DiT --> Denoised["Denoised latent [F'×H'×W'×C]"]
+        Denoised --> VAEDec["3D VAE Decoder"]
+        VAEDec --> Video["Video frames [F×H×W×3]"]
+    end
+    subgraph Training Pipeline
+        Dataset["Video Dataset"] --> DataPrep["Data Prep"]
+        DataPrep --> LatentCache["Latent Caching"]
+        LatentCache --> Train["Train"]
+        Train --> Loss["Loss = MSE(predicted_noise, actual_noise)<br/>Distributed across 100s–1000s of GPUs"]
+    end
 ```
 
 ---

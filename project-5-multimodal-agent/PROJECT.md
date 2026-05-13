@@ -9,26 +9,14 @@ In this project, you'll build a **Multi-modal Generation Agent** — an interact
 - Generate simple text-to-video clips
 - Provide a web UI for easy interaction
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│              WHAT YOU'LL BUILD                                │
-│                                                             │
-│  User: "A cyberpunk city at sunset"                         │
-│           │                                                 │
-│           ▼                                                 │
-│  ┌─────────────────────┐                                   │
-│  │  Multi-modal Agent  │                                   │
-│  │  • Text-to-Image    │──► 🖼️ Generated Image             │
-│  │  • Image Variations │──► 🖼️ Modified Image              │
-│  │  • Text-to-Video    │──► 🎬 Generated Video             │
-│  │  • Parameter Tuning │                                   │
-│  └─────────────────────┘                                   │
-│           │                                                 │
-│           ▼                                                 │
-│  ┌─────────────────────┐                                   │
-│  │   Gradio Web UI     │                                   │
-│  └─────────────────────┘                                   │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    A["User: 'A cyberpunk city at sunset'"] --> B[Multi-modal Agent]
+    B -->|Text-to-Image| C["🖼️ Generated Image"]
+    B -->|Image Variations| D["🖼️ Modified Image"]
+    B -->|Text-to-Video| E["🎬 Generated Video"]
+    B -->|Parameter Tuning| B
+    B --> F[Gradio Web UI]
 ```
 
 ---
@@ -608,6 +596,15 @@ Step 2: Parameter Tuning Exploration
 ---
 
 ## Step 3: Image Variation Pipeline
+
+```mermaid
+graph LR
+    A[Input Image] --> B[VAE Encoder]
+    B --> C[Add Noise based on strength]
+    C --> D[Denoise with new prompt]
+    D --> E[VAE Decoder]
+    E --> F[Output Variation]
+```
 
 Create variations of an existing image — modify style, add elements, or create alternatives.
 
@@ -1479,6 +1476,19 @@ Open http://localhost:7860 in your browser to use the UI!
 ---
 
 ## Step 6: Complete Multi-modal Agent
+
+```mermaid
+graph TD
+    A[User Request] --> B{Request Type}
+    B -->|Text-to-Image| C[T2I Pipeline]
+    B -->|Image Variation| D[Img2Img Pipeline]
+    B -->|Text-to-Video| E[T2V Pipeline]
+    C --> F[Generated Image]
+    D --> F
+    E --> G[Generated Video]
+    F --> H[Gradio Web UI]
+    G --> H
+```
 
 Finally, let's wrap everything into a clean, reusable agent class.
 

@@ -11,40 +11,19 @@ A **Deep Research** system that:
 6. Produces a comprehensive research report with citations
 7. Optionally runs entirely locally with Ollama
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    DEEP RESEARCH SYSTEM                      │
-│                                                             │
-│  "What are the long-term      ┌──────────────────┐         │
-│   effects of microplastics    │ Question Planner │         │
-│   on human health?"           └────────┬─────────┘         │
-│                                        │                   │
-│                    ┌───────────────────┼──────────────┐    │
-│                    ▼                   ▼              ▼    │
-│              Sub-Q 1            Sub-Q 2          Sub-Q 3   │
-│              "Sources of        "Known health    "Current  │
-│               exposure"          effects"        research" │
-│                    │                   │              │    │
-│                    ▼                   ▼              ▼    │
-│              ┌──────────┐       ┌──────────┐   ┌────────┐ │
-│              │Web Search│       │Web Search│   │Web Srch│ │
-│              └────┬─────┘       └────┬─────┘   └───┬────┘ │
-│                   │                  │             │       │
-│                   └──────────────────┼─────────────┘       │
-│                                      ▼                     │
-│                            ┌─────────────────┐             │
-│                            │  Reasoning &    │             │
-│                            │  Synthesis      │             │
-│                            │  (Tree of       │             │
-│                            │   Thoughts)     │             │
-│                            └────────┬────────┘             │
-│                                     ▼                      │
-│                            ┌─────────────────┐             │
-│                            │ Research Report │             │
-│                            │ with Citations  │             │
-│                            └─────────────────┘             │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    Q["Research Question<br><i>e.g. Long-term effects of<br>microplastics on human health?</i>"] --> QP[Question Planner]
+    QP --> SQ1["Sub-Q 1<br>Sources of exposure"]
+    QP --> SQ2["Sub-Q 2<br>Known health effects"]
+    QP --> SQ3["Sub-Q 3<br>Current research"]
+    SQ1 --> WS1[Web Search]
+    SQ2 --> WS2[Web Search]
+    SQ3 --> WS3[Web Search]
+    WS1 --> RS["Reasoning & Synthesis<br>(Tree of Thoughts)"]
+    WS2 --> RS
+    WS3 --> RS
+    RS --> RR["Research Report<br>with Citations"]
 ```
 
 ---
@@ -1395,6 +1374,14 @@ def generate_report(question: str, findings: list[dict], synthesis: str) -> str:
     return report
 
 
+```mermaid
+graph LR
+    A[Research Question] --> B[Decompose into Sub-Qs]
+    B --> C[Web Search per Sub-Q]
+    C --> D[Tree of Thoughts Synthesis]
+    D --> E[Research Report]
+```
+
 # ─── Main Pipeline ────────────────────────────────────────────────────────────
 
 def deep_research(question: str) -> str:
@@ -1640,6 +1627,14 @@ def search_web(query: str, max_results: int = 5) -> list[dict]:
         print(f"    ⚠ Search error: {e}")
         return []
 
+
+```mermaid
+graph LR
+    A[Question] --> B[Decompose Locally]
+    B --> C[Search Sub-Qs]
+    C --> D[Local LLM Synthesis]
+    D --> E[Report]
+```
 
 # ─── Research Pipeline (Local) ────────────────────────────────────────────────
 
