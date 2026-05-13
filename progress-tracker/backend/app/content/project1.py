@@ -33,7 +33,8 @@ PROJECT_1 = {
                 "- **Training infrastructure** — Distributed training across GPU/TPU clusters.\n\n"
                 "The Chinchilla scaling laws suggest that model size and data size should be scaled "
                 "roughly equally for compute-optimal training. Modern models like LLaMA 3 train on "
-                "15+ trillion tokens, far exceeding earlier estimates of optimal data requirements."
+                "15+ trillion tokens, far exceeding earlier estimates of optimal data requirements.\n\n"
+                "<!-- checkpoint: I understand the three stages of LLM development and why pre-training matters -->"
             ),
             "children": [
                 {
@@ -69,7 +70,8 @@ PROJECT_1 = {
                         "Raw Crawl → Language ID → Dedup → Quality Filter → Tokenize → Shuffle → Train\n"
                         "```\n\n"
                         "The entire pipeline is typically orchestrated with tools like Apache Spark or "
-                        "Datatrove, processing petabytes of raw text into clean, tokenized training shards."
+                        "Datatrove, processing petabytes of raw text into clean, tokenized training shards.\n\n"
+                        "<!-- checkpoint: I understand data sources, quality tradeoffs, and the data pipeline for LLM pre-training -->"
                     ),
                 },
                 {
@@ -102,7 +104,8 @@ PROJECT_1 = {
                         "Research shows that cleaning quality has a **larger effect on downstream "
                         "performance** than simply adding more data. The Phi series of models demonstrated "
                         "that small models trained on carefully curated \"textbook-quality\" data can rival "
-                        "much larger models trained on noisier corpora."
+                        "much larger models trained on noisier corpora.\n\n"
+                        "<!-- checkpoint: I understand the core data cleaning steps and their impact on model quality -->"
                     ),
                 },
                 {
@@ -144,7 +147,8 @@ PROJECT_1 = {
                         "# Output: ['Hello', ',', ' world', '!', ' Token', 'ization', ' is', ' fascinating', '.']\n"
                         "```\n\n"
                         "Modern models use byte-level BPE to ensure every possible input can be encoded, "
-                        "avoiding the dreaded `[UNK]` token entirely."
+                        "avoiding the dreaded `[UNK]` token entirely.\n\n"
+                        "<!-- checkpoint: I understand BPE tokenization and vocabulary size tradeoffs -->"
                     ),
                 },
                 {
@@ -188,7 +192,8 @@ PROJECT_1 = {
                         "- **RMSNorm** instead of LayerNorm for stability\n"
                         "- **RoPE** (Rotary Position Embeddings) for length generalization\n"
                         "- **GQA** (Grouped-Query Attention) to reduce KV-cache memory\n"
-                        "- **SwiGLU** activation in the FFN layers"
+                        "- **SwiGLU** activation in the FFN layers\n\n"
+                        "<!-- checkpoint: I understand the Transformer architecture, self-attention, and modern enhancements -->"
                     ),
                 },
                 {

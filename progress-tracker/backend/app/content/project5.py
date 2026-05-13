@@ -36,6 +36,8 @@ Diffusion:   x_T → x_{T-1} → ... → x_0  (iterative denoising, stable)
 4. **Scalability** — larger models consistently improve quality (unlike GANs which plateau)
 
 Today, state-of-the-art systems combine large language model text encoders (T5, CLIP) with powerful diffusion backbones to generate photorealistic images from natural language descriptions. Understanding this pipeline is essential for building multi-modal generation agents.
+
+<!-- checkpoint: I understand the evolution from GANs to diffusion models and why diffusion won -->
 """,
             "children": [
                 {
@@ -189,6 +191,8 @@ where `w` is the **guidance scale** (typically 7-15). Higher `w` increases promp
 ### Prediction Targets
 
 Models can predict noise (`ε`), the clean image (`x₀`), or velocity (`v = √ᾱ·ε - √(1-ᾱ)·x₀`). Velocity prediction is preferred in modern models as it provides more balanced gradients across timesteps.
+
+<!-- checkpoint: I understand the forward noising process, training objective, and classifier-free guidance -->
 """,
                 },
                 {
@@ -348,6 +352,8 @@ Video → Patchify (space + time) → DiT Blocks → Unpatchify → Video
 ```
 
 This mirrors the shift from CNNs to Transformers in NLP and vision, enabling better scaling and temporal modeling. The Sora technical report demonstrated that scaling DiT models produces emergent capabilities like consistent 3D scenes and realistic physics.
+
+<!-- checkpoint: I understand the core challenges of video generation and the shift to DiT architectures -->
 """,
             "children": [
                 {
@@ -524,6 +530,8 @@ DiT Block (Factored):
 ### Scaling Advantages
 
 DiT follows predictable scaling laws: doubling parameters yields consistent quality improvements. Sora demonstrated that scaling DiT to massive sizes produces emergent capabilities like 3D consistency, object permanence, and physically plausible motion — properties not explicitly trained for.
+
+<!-- checkpoint: I understand DiT patchification, attention strategies, and scaling advantages over U-Net -->
 """,
                 },
                 {

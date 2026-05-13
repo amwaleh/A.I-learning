@@ -95,3 +95,24 @@ class DashboardResponse(BaseModel):
     overall_percentage: float
     streak_days: int
     projects: list[ProjectListItem] = []
+
+
+# ── Checkpoints ───────────────────────────────────────────────────────
+class CheckpointResponse(BaseModel):
+    checkpoint_number: int
+    label: str
+    confirmed: bool = False
+    confirmed_at: datetime | None = None
+
+
+class TopicProgressStatus(BaseModel):
+    scroll_percent: int
+    time_spent: int
+    checkpoints_total: int
+    checkpoints_confirmed: int
+    status: str
+
+
+class AutoProgressRequest(BaseModel):
+    scroll_percent: int = Field(ge=0, le=100)
+    time_spent: int = Field(ge=0, description="Seconds spent on topic")

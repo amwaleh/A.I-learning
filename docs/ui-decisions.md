@@ -55,3 +55,12 @@ graph LR
 | `TopicItem` | `compact={false}` | Full-width with dropdown selector |
 | `TopicContent` | `fullHeight={true}` | Fills parent, sticky header, scrollable |
 | `TopicContent` | `fullHeight={false}` | Standalone card with margin |
+| `MermaidBlock` | `chart={string}` | Renders mermaid diagram as SVG with dark theme |
+
+## Mermaid Rendering
+
+- **Package**: `mermaid` (client-side)
+- **Component**: `MermaidBlock.jsx` — renders ````mermaid` code blocks as SVG
+- **Integration**: Custom `components` prop on `ReactMarkdown` intercepts `language-mermaid` code blocks
+- **Theme**: Dark mode matching app palette (indigo primary, slate backgrounds)
+- **Fallback**: On parse error, displays raw code in a bordered `<pre>` block

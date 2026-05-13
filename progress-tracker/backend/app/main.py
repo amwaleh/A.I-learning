@@ -12,7 +12,7 @@ from slowapi.util import get_remote_address
 
 from app.config import get_settings
 from app.database import init_db
-from app.routers import auth, projects, progress, dashboard
+from app.routers import auth, projects, progress, dashboard, checkpoints
 
 settings = get_settings()
 
@@ -63,6 +63,7 @@ app.include_router(auth.router)
 app.include_router(projects.router)
 app.include_router(progress.router)
 app.include_router(dashboard.router)
+app.include_router(checkpoints.router)
 
 
 @app.exception_handler(Exception)

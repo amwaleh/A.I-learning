@@ -1,19 +1,34 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { X, Loader2 } from 'lucide-react';
 import client from '../api/client';
+import MermaidBlock from './MermaidBlock';
+import CheckpointButton from './CheckpointButton';
+import ProgressIndicator from './ProgressIndicator';
+import useScrollProgress from '../hooks/useScrollProgress';
 
-export default function TopicContent({ topicId, topicTitle, onClose, fullHeight = false }) {
+export default function TopicContent({ topicId, topicTitle, onClose, fullHeight = false, onStatusChange }) {
   const [content, setContent] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [checkpoints, setCheckpoints] = useState([]);
+  const [status, setStatus] = useState('not_started');
+  const { scrollPercent, timeSpent, containerRef, reset } = useScrollProgress();
+  const lastReportedRef = useRef({ scroll: 0, time: 0 });
 
+  // Fetch content and checkpoints
   useEffect(() => {
-    const fetchContent = async () => {
+    const fetchData = async () => {
       setLoading(true);
+      reset();
       try {
-        const res = await client.get(`/projects/topics/${topicId}`);
-        setContent(res.data.content);
+        const [contentRes, cpRes] = await Promise.all([
+          client.get(`/projects/topics/${topicId}`),
+          client.get(`/projects/topics/${topicId}/checkpoints`),
+        ]);
+        setContent(contentRes.data.content);
+        setStatus(contentRes.data.status || 'not_started');
+        setCheckpoints(cpRes.data || []);
       } catch (err) {
         console.error('Failed to load topic content:', err);
         setContent(null);
@@ -21,8 +36,59 @@ export default function TopicContent({ topicId, topicTitle, onClose, fullHeight 
         setLoading(false);
       }
     };
-    fetchContent();
-  }, [topicId]);
+    fetchData();
+  }, [topicId, reset]);
+
+  // Auto-progress reporting (debounced — every 10% scroll or 10s)
+  useEffect(() => {
+    if (status === 'completed' || loading) return;
+
+    const { scroll: lastScroll, time: lastTime } = lastReportedRef.current;
+    const scrollDelta = Math.abs(scrollPercent - lastScroll);
+    const timeDelta = timeSpent - lastTime;
+
+    if (scrollDelta < 10 && timeDelta < 10) return;
+
+    lastReportedRef.current = { scroll: scrollPercent, time: timeSpent };
+
+    client.patch(`/projects/topics/${topicId}/auto-progress`, {
+      scroll_percent: scrollPercent,
+      time_spent: timeSpent,
+    }).then((res) => {
+      if (res.data.status !== status) {
+        setStatus(res.data.status);
+        onStatusChange?.(topicId, res.data.status);
+      }
+    }).catch(() => {});
+  }, [scrollPercent, timeSpent, topicId, status, loading, onStatusChange]);
+
+  const handleCheckpointConfirm = useCallback((cpNumber) => {
+    setCheckpoints(prev =>
+      prev.map(cp => cp.checkpoint_number === cpNumber ? { ...cp, confirmed: true } : cp)
+    );
+    // Trigger a progress check after confirming
+    client.patch(`/projects/topics/${topicId}/auto-progress`, {
+      scroll_percent: scrollPercent,
+      time_spent: timeSpent,
+    }).then((res) => {
+      if (res.data.status !== status) {
+        setStatus(res.data.status);
+        onStatusChange?.(topicId, res.data.status);
+      }
+    }).catch(() => {});
+  }, [topicId, scrollPercent, timeSpent, status, onStatusChange]);
+
+  // Parse checkpoint markers from content
+  const renderContent = (rawContent) => {
+    if (!rawContent) return rawContent;
+    // Replace <!-- checkpoint: Label --> with a special placeholder
+    return rawContent.replace(
+      /<!--\s*checkpoint:\s*(.+?)\s*-->/g,
+      (_, label) => `\n\n:::checkpoint:::${label}:::\n\n`
+    );
+  };
+
+  const confirmedCount = checkpoints.filter(cp => cp.confirmed).length;
 
   return (
     <div className={`bg-slate-900/60 border border-slate-800 rounded-xl flex flex-col
@@ -39,7 +105,7 @@ export default function TopicContent({ topicId, topicTitle, onClose, fullHeight 
       </div>
 
       {/* Scrollable content */}
-      <div className="flex-1 overflow-y-auto px-6 py-5">
+      <div ref={containerRef} className="flex-1 overflow-y-auto px-6 py-5">
         {loading ? (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="w-6 h-6 text-indigo-500 animate-spin" />
@@ -58,7 +124,47 @@ export default function TopicContent({ topicId, topicTitle, onClose, fullHeight 
                           prose-table:border-slate-700
                           prose-th:text-slate-200 prose-th:border-slate-600
                           prose-td:border-slate-700 prose-td:text-slate-300">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
+              components={{
+                code({ className, children, ...props }) {
+                  const match = /language-mermaid/.test(className || '');
+                  if (match) {
+                    return <MermaidBlock chart={String(children)} />;
+                  }
+                  return <code className={className} {...props}>{children}</code>;
+                },
+                pre({ children, ...props }) {
+                  const child = Array.isArray(children) ? children[0] : children;
+                  if (child?.props?.className === 'language-mermaid') {
+                    return <>{children}</>;
+                  }
+                  return <pre {...props}>{children}</pre>;
+                },
+                p({ children }) {
+                  // Detect checkpoint placeholder
+                  const text = typeof children === 'string' ? children :
+                    Array.isArray(children) ? children.join('') : '';
+                  const cpMatch = String(text).match(/^:::checkpoint:::(.+?):::$/);
+                  if (cpMatch) {
+                    const label = cpMatch[1];
+                    const cp = checkpoints.find(c => c.label === label);
+                    if (cp) {
+                      return (
+                        <CheckpointButton
+                          topicId={topicId}
+                          checkpointNumber={cp.checkpoint_number}
+                          label={label}
+                          confirmed={cp.confirmed}
+                          onConfirm={handleCheckpointConfirm}
+                        />
+                      );
+                    }
+                  }
+                  return <p>{children}</p>;
+                },
+              }}
+            >{renderContent(content)}</ReactMarkdown>
           </div>
         ) : (
           <p className="text-slate-500 text-sm italic py-8 text-center">
@@ -66,6 +172,17 @@ export default function TopicContent({ topicId, topicTitle, onClose, fullHeight 
           </p>
         )}
       </div>
+
+      {/* Floating progress indicator */}
+      {!loading && content && (
+        <ProgressIndicator
+          scrollPercent={scrollPercent}
+          timeSpent={timeSpent}
+          checkpointsTotal={checkpoints.length}
+          checkpointsConfirmed={confirmedCount}
+          status={status}
+        />
+      )}
     </div>
   );
 }

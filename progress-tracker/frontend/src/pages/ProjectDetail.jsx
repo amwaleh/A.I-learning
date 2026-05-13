@@ -15,6 +15,22 @@ export default function ProjectDetail() {
   const [selectedTopic, setSelectedTopic] = useState(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
+  // Flatten topic tree for sequential navigation
+  const flattenTopics = (items) => {
+    const flat = [];
+    for (const t of items) {
+      flat.push(t);
+      if (t.children?.length) flat.push(...flattenTopics(t.children));
+    }
+    return flat;
+  };
+
+  const getNextTopic = (currentId) => {
+    const flat = flattenTopics(topics);
+    const idx = flat.findIndex(t => t.id === currentId);
+    return idx >= 0 && idx < flat.length - 1 ? flat[idx + 1] : null;
+  };
+
   const fetchData = async () => {
     try {
       const [projRes, topicsRes] = await Promise.all([
@@ -159,6 +175,29 @@ export default function ProjectDetail() {
               topicTitle={selectedTopic.title}
               onClose={() => setSelectedTopic(null)}
               fullHeight
+              onStatusChange={(topicId, newStatus) => {
+                // Update local topic tree
+                const updateTopicStatus = (items) =>
+                  items.map((t) => {
+                    if (t.id === topicId) return { ...t, status: newStatus };
+                    if (t.children?.length) return { ...t, children: updateTopicStatus(t.children) };
+                    return t;
+                  });
+                setTopics(updateTopicStatus(topics));
+
+                // Auto-advance to next topic on completion
+                if (newStatus === 'completed') {
+                  const next = getNextTopic(topicId);
+                  if (next) {
+                    setTimeout(() => setSelectedTopic(next), 800);
+                  }
+                  // Refresh project stats
+                  client.get('/projects').then(res => {
+                    const proj = res.data.find((p) => String(p.id) === String(id));
+                    if (proj) setProject(proj);
+                  });
+                }
+              }}
             />
           ) : (
             <div className="h-full bg-slate-900/30 border border-slate-800/50 rounded-xl flex flex-col items-center justify-center text-center p-8">

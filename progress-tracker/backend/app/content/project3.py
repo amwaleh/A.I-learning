@@ -33,6 +33,8 @@ graph LR
 A **workflow** is a predefined, deterministic arrangement of LLM calls — you control the flow. An **autonomous agent**, by contrast, decides its own next step at each turn. In practice most production systems are workflows with agentic *components*, not fully autonomous agents. This hybrid approach gives you reliability (from the workflow skeleton) with flexibility (from agentic decision-making at key nodes).
 
 Understanding these patterns is essential before building your Ask-the-Web agent, because your agent will combine several of them: routing user queries, chaining search results through summarization, and reflecting on answer quality.
+
+<!-- checkpoint: I understand the five agentic workflow patterns and when to use each -->
 """,
             "children": [
                 {
@@ -172,6 +174,8 @@ Robust routing requires fallback logic:
 ### When to Use Routing
 
 Routing shines when you have **distinct, well-defined task categories** with different optimal strategies. For an Ask-the-Web agent, you might route factual queries to search, opinion queries to a discussion handler, and code questions to a code-execution tool. The key benefit is that each handler can have its own optimized prompt, tool set, and model — leading to better results than a one-size-fits-all approach.
+
+<!-- checkpoint: I understand how routing classifies inputs and dispatches them to specialized handlers -->
 """,
                 },
                 {
@@ -433,6 +437,8 @@ graph LR
 - **Idempotent when possible** — safe to retry on failure
 
 For your Ask-the-Web agent, the primary tool is **web search**, but you'll likely also need a **page reader** (to fetch and parse full web pages) and possibly a **calculator** for data-heavy queries. The key insight is that the LLM decides *when* and *how* to use each tool based on the user's query — this decision-making is what makes it an agent rather than a pipeline.
+
+<!-- checkpoint: I understand why agents need tools and the tool-use loop -->
 """,
             "children": [
                 {
@@ -512,6 +518,8 @@ response = anthropic.messages.create(
 - **Structured outputs** — both OpenAI and Anthropic support strict JSON schema adherence for reliable parsing
 - The LLM produces a **JSON arguments blob**; your code parses it and invokes the actual function
 - Always validate tool call arguments before execution — LLMs can produce malformed or unexpected values
+
+<!-- checkpoint: I understand how tool calling works with OpenAI and Anthropic APIs -->
 """,
                 },
                 {

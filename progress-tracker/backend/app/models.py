@@ -82,3 +82,39 @@ class UserProgress(Base):
 
     user = relationship("User", back_populates="progress")
     topic = relationship("Topic", back_populates="user_progress")
+
+
+class TopicCheckpoint(Base):
+    __tablename__ = "topic_checkpoints"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    topic_id = Column(Integer, ForeignKey("topics.id"), nullable=False)
+    checkpoint_number = Column(Integer, nullable=False)
+    label = Column(String(255), nullable=False)
+
+    topic = relationship("Topic", backref="checkpoints")
+
+    __table_args__ = (
+        UniqueConstraint("topic_id", "checkpoint_number", name="uq_topic_checkpoint"),
+    )
+
+
+class UserCheckpoint(Base):
+    __tablename__ = "user_checkpoints"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(String(36), ForeignKey("users.id"), nullable=False)
+    topic_id = Column(Integer, ForeignKey("topics.id"), nullable=False)
+    checkpoint_number = Column(Integer, nullable=False)
+    confirmed_at = Column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
+
+    user = relationship("User", backref="checkpoints")
+    topic = relationship("Topic", backref="user_checkpoints")
+
+    __table_args__ = (
+        UniqueConstraint(
+            "user_id", "topic_id", "checkpoint_number", name="uq_user_checkpoint"
+        ),
+    )
