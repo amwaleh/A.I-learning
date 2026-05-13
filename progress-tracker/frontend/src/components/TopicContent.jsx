@@ -25,6 +25,19 @@ export default function TopicContent({ topicId, topicTitle, onClose, fullHeight 
         setContent(contentRes.data.content);
         setStatus(contentRes.data.status || 'not_started');
         setCheckpoints(cpRes.data || []);
+
+        // Auto-mark in_progress when opening a topic
+        if (contentRes.data.status === 'not_started') {
+          client.patch(`/projects/topics/${topicId}/auto-progress`, {
+            scroll_percent: 25,
+            time_spent: 0,
+          }).then((res) => {
+            if (res.data.status === 'in_progress') {
+              setStatus('in_progress');
+              onStatusChange?.(topicId, 'in_progress');
+            }
+          }).catch(() => {});
+        }
       } catch (err) {
         console.error('Failed to load topic content:', err);
         setContent(null);
@@ -162,11 +175,31 @@ export default function TopicContent({ topicId, topicTitle, onClose, fullHeight 
         )}
       </div>
 
-      {/* Checkpoint progress summary */}
-      {!loading && content && checkpoints.length > 0 && (
-        <div className="flex items-center gap-3 px-4 py-2.5 bg-slate-900/80 border-t border-slate-800 text-sm text-slate-400">
-          <span>{confirmedCount}/{checkpoints.length} checkpoints confirmed</span>
-          {status === 'completed' && <span className="text-emerald-400 font-medium">✓ Complete</span>}
+      {/* Bottom bar: checkpoint summary or mark-complete button */}
+      {!loading && content && status !== 'completed' && (
+        <div className="flex items-center gap-3 px-4 py-2.5 bg-slate-900/80 border-t border-slate-800 text-sm">
+          {checkpoints.length > 0 ? (
+            <span className="text-slate-400">{confirmedCount}/{checkpoints.length} checkpoints confirmed</span>
+          ) : (
+            <button
+              onClick={() => {
+                client.patch(`/projects/topics/${topicId}/auto-progress`, {
+                  scroll_percent: 100,
+                  time_spent: 30,
+                }).then((res) => {
+                  handleStatusTransition(res.data.status);
+                }).catch(() => {});
+              }}
+              className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-medium rounded-lg transition-colors"
+            >
+              ✓ Mark as Complete
+            </button>
+          )}
+        </div>
+      )}
+      {!loading && content && status === 'completed' && (
+        <div className="flex items-center gap-3 px-4 py-2.5 bg-emerald-950/40 border-t border-emerald-800/50 text-sm text-emerald-400">
+          <span className="font-medium">✓ Topic completed</span>
         </div>
       )}
 
