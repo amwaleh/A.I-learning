@@ -35,6 +35,11 @@ export default function TopicContent({ topicId, topicTitle, onClose, fullHeight 
     fetchData();
   }, [topicId]);
 
+  // Reset overlay when topic changes
+  useEffect(() => {
+    setShowCompleted(false);
+  }, [topicId]);
+
   // Handle status transition — show celebration before notifying parent
   const handleStatusTransition = useCallback((newStatus) => {
     if (newStatus === status) return;

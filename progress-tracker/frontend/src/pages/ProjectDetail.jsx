@@ -189,7 +189,7 @@ export default function ProjectDetail() {
                 if (newStatus === 'completed') {
                   const next = getNextTopic(topicId);
                   if (next) {
-                    setTimeout(() => setSelectedTopic(next), 800);
+                    setSelectedTopic(next);
                   }
                   // Refresh project stats
                   client.get('/projects').then(res => {
