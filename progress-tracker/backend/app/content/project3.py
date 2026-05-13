@@ -23,11 +23,9 @@ Anthropic's taxonomy (from their *"Building Effective Agents"* blog post) identi
 
 The key insight is to **use the simplest pattern that solves your problem**. Start with prompt chaining for straightforward pipelines. Add routing when you need specialization. Use parallelization for throughput. Layer in reflection when quality matters more than speed. Resort to orchestration-worker only for genuinely complex, multi-faceted tasks.
 
-```
-Complexity Spectrum:
-
-Single LLM Call → Prompt Chain → Router → Parallel → Reflection → Orchestrator
-   (simplest)                                                    (most complex)
+```mermaid
+graph LR
+    A["Single LLM Call<br/>(simplest)"] --> B["Prompt Chain"] --> C["Router"] --> D["Parallel"] --> E["Reflection"] --> F["Orchestrator<br/>(most complex)"]
 ```
 
 ### Workflows vs. Autonomous Agents
@@ -49,9 +47,16 @@ A single monolithic prompt often fails on complex tasks because it overloads the
 
 ### Architecture
 
-```
-[Input] → [Step 1: Extract] → Gate ✓ → [Step 2: Transform] → Gate ✓ → [Step 3: Format] → [Output]
-                                 ✗ → Retry / Abort
+```mermaid
+graph LR
+    Input --> Step1["Step 1: Extract"]
+    Step1 --> G1{"Gate ✓"}
+    G1 -->|Pass| Step2["Step 2: Transform"]
+    G1 -->|Fail| Retry["Retry / Abort"]
+    Step2 --> G2{"Gate ✓"}
+    G2 -->|Pass| Step3["Step 3: Format"]
+    G2 -->|Fail| Retry
+    Step3 --> Output
 ```
 
 Gates can be:
@@ -114,11 +119,13 @@ Routing is the pattern of **classifying an input and dispatching it to a special
 
 ### How It Works
 
-```
-                        ┌→ [Code Handler]
-[User Query] → [Router] ├→ [Search Handler]
-                        ├→ [Math Handler]
-                        └→ [Fallback / General Handler]
+```mermaid
+graph LR
+    Q["User Query"] --> R["Router"]
+    R --> C["Code Handler"]
+    R --> S["Search Handler"]
+    R --> M["Math Handler"]
+    R --> F["Fallback / General Handler"]
 ```
 
 The router itself can be:
@@ -182,10 +189,12 @@ Parallelization runs **multiple LLM calls concurrently** to improve throughput a
 
 This is the LLM equivalent of **map-reduce**. You break a large task into independent chunks, process each in parallel, then combine the outputs.
 
-```
-            ┌→ [LLM: Chunk 1] ─┐
-[Input] ────├→ [LLM: Chunk 2] ─├→ [Aggregator] → [Output]
-            └→ [LLM: Chunk 3] ─┘
+```mermaid
+graph LR
+    Input --> C1["LLM: Chunk 1"] --> Agg["Aggregator"]
+    Input --> C2["LLM: Chunk 2"] --> Agg
+    Input --> C3["LLM: Chunk 3"] --> Agg
+    Agg --> Output
 ```
 
 ### Asyncio Example
@@ -246,10 +255,10 @@ Reflection is the pattern where an LLM **critiques its own output** and iterativ
 
 ### The Reflection Loop
 
-```
-[Generate] → [Critique] → [Revise] → [Critique] → [Revise] → ... → [Accept]
-     ↑                                                                    |
-     └────────────── stop when quality threshold met ─────────────────────┘
+```mermaid
+graph LR
+    Generate --> Critique --> Revise --> Critique2["Critique"] --> Revise2["Revise"] --> Accept
+    Accept -->|"stop when quality threshold met"| Generate
 ```
 
 ### How It Works
@@ -317,25 +326,14 @@ The orchestration-worker pattern uses a **manager agent** that decomposes a comp
 
 ### Architecture
 
-```
-                                ┌──────────────────┐
-                                │   ORCHESTRATOR    │
-                                │  (Manager Agent)  │
-                                └────────┬─────────┘
-                                         │
-                          ┌──────────────┼──────────────┐
-                          ▼              ▼              ▼
-                   ┌────────────┐ ┌────────────┐ ┌────────────┐
-                   │  Worker 1  │ │  Worker 2  │ │  Worker 3  │
-                   │  (Search)  │ │ (Analyze)  │ │ (Compile)  │
-                   └─────┬──────┘ └─────┬──────┘ └─────┬──────┘
-                         │              │              │
-                         └──────────────┼──────────────┘
-                                        ▼
-                                ┌──────────────────┐
-                                │   ORCHESTRATOR    │
-                                │  (Aggregation)    │
-                                └──────────────────┘
+```mermaid
+graph TD
+    O1["ORCHESTRATOR<br/>(Manager Agent)"] --> W1["Worker 1<br/>(Search)"]
+    O1 --> W2["Worker 2<br/>(Analyze)"]
+    O1 --> W3["Worker 3<br/>(Compile)"]
+    W1 --> O2["ORCHESTRATOR<br/>(Aggregation)"]
+    W2 --> O2
+    W3 --> O2
 ```
 
 ### How It Works
@@ -416,10 +414,15 @@ LLMs have fundamental limitations that tools address:
 
 ### The Tool-Use Loop
 
-```
-User Query → LLM decides to use a tool → Tool call is formatted
-     → Tool is executed → Result returned to LLM → LLM reasons over result
-     → (repeat if needed) → Final answer
+```mermaid
+graph LR
+    A["User Query"] --> B["LLM decides to use a tool"]
+    B --> C["Tool call is formatted"]
+    C --> D["Tool is executed"]
+    D --> E["Result returned to LLM"]
+    E --> F["LLM reasons over result"]
+    F -->|"repeat if needed"| B
+    F --> G["Final answer"]
 ```
 
 ### Tool Design Principles
@@ -590,8 +593,13 @@ Tool execution is the runtime layer that actually **runs the tool** after the LL
 
 ### The Execution Pipeline
 
-```
-LLM Tool Call → Validate Args → Sandbox Check → Execute → Handle Errors → Return Result
+```mermaid
+graph LR
+    A["LLM Tool Call"] --> B["Validate Args"]
+    B --> C["Sandbox Check"]
+    C --> D["Execute"]
+    D --> E["Handle Errors"]
+    E --> F["Return Result"]
 ```
 
 ### Sandboxing
@@ -679,18 +687,14 @@ With MCP:    N apps + M tools = N+M standardized connections
 
 MCP follows a **client-server model**:
 
-```
-┌─────────────────────────────────────┐
-│          AI Application             │
-│  ┌───────────┐   ┌───────────┐     │
-│  │ MCP Client│   │ MCP Client│     │
-│  └─────┬─────┘   └─────┬─────┘     │
-└────────┼────────────────┼───────────┘
-         │                │
-    ┌────▼─────┐    ┌─────▼────┐
-    │MCP Server│    │MCP Server│
-    │(GitHub)  │    │(Database)│
-    └──────────┘    └──────────┘
+```mermaid
+graph TD
+    subgraph "AI Application"
+        MC1["MCP Client"]
+        MC2["MCP Client"]
+    end
+    MC1 --> S1["MCP Server<br/>(GitHub)"]
+    MC2 --> S2["MCP Server<br/>(Database)"]
 ```
 
 - **MCP Host** — the AI application (Claude Desktop, VS Code, your custom app)
@@ -783,8 +787,9 @@ The choice of framework depends on your task. For your Ask-the-Web agent, **ReAC
 
 ### The Loop
 
-```
-Thought → Action → Observation → Thought → Action → Observation → ... → Final Answer
+```mermaid
+graph LR
+    T["Thought"] --> A["Action"] --> O["Observation"] --> T2["Thought"] --> A2["Action"] --> O2["Observation"] --> FA["Final Answer"]
 ```
 
 The key innovation is that the **Thought** step is explicit — the LLM verbalizes its reasoning before deciding what action to take. This makes the agent's decision-making transparent and debuggable.
@@ -860,17 +865,12 @@ def react_loop(query: str, max_steps: int = 10) -> str:
 
 ### How Reflexion Works
 
-```
-┌─────────┐     ┌──────────┐     ┌───────────┐
-│  Actor   │────▶│Evaluator │────▶│  Reflect  │
-│(ReACT   │     │(Pass/Fail)│     │(Self-     │
-│ agent)   │     │          │     │ Critique) │
-└─────────┘     └──────────┘     └─────┬─────┘
-     ▲                                  │
-     │          ┌──────────┐            │
-     └──────────│ Episodic │◀───────────┘
-                │  Memory  │
-                └──────────┘
+```mermaid
+graph LR
+    Actor["Actor<br/>(ReACT agent)"] --> Evaluator["Evaluator<br/>(Pass/Fail)"]
+    Evaluator --> Reflect["Reflect<br/>(Self-Critique)"]
+    Reflect --> Memory["Episodic Memory"]
+    Memory --> Actor
 ```
 
 ### The Three Components
@@ -937,9 +937,18 @@ Reflexion can be seen as **reinforcement learning with verbal feedback** instead
 
 ### ReWOO vs ReACT
 
+```mermaid
+graph LR
+    subgraph ReACT
+        T1["Think"] --> A1["Act"] --> O1["Observe"] --> T2["Think"] --> A2["Act"] --> O2["Observe"] --> Ans1["Answer"]
+    end
 ```
-ReACT:  Think → Act → Observe → Think → Act → Observe → Answer
-ReWOO:  Plan ALL steps → Execute ALL steps → Synthesize Answer
+
+```mermaid
+graph LR
+    subgraph ReWOO
+        P["Plan ALL steps"] --> E["Execute ALL steps"] --> S["Synthesize Answer"]
+    end
 ```
 
 ### The Three Stages
@@ -1028,17 +1037,17 @@ ReACT-style agents follow a single path. If they make a wrong decision early, th
 
 ### Tree Structure
 
-```
-                        [Root: User Query]
-                       /        |         \\
-              [Search A]   [Search B]   [Search C]
-              /      \\        |           |
-        [Follow-up] [Dead   [Extract]  [Refine]
-                     End]     |           |
-                           [Answer]    [Answer]
-                           score=0.9   score=0.7
-                              ↑
-                        Best path chosen
+```mermaid
+graph TD
+    Root["Root: User Query"] --> SA["Search A"]
+    Root --> SB["Search B"]
+    Root --> SC["Search C"]
+    SA --> FU["Follow-up"]
+    SA --> DE["Dead End"]
+    SB --> EX["Extract"]
+    SC --> RE["Refine"]
+    EX --> AnsA["Answer<br/>score=0.9 ✓"]
+    RE --> AnsB["Answer<br/>score=0.7"]
 ```
 
 ### MCTS for LLMs (Tree of Thoughts)
@@ -1109,16 +1118,49 @@ Multi-agent systems (MAS) involve **multiple AI agents working together** — ea
 
 Multi-agent systems use different topologies for agent communication:
 
+```mermaid
+graph LR
+    subgraph "1. Sequential"
+        A1["A"] --> B1["B"] --> C1["C"] --> D1["D"]
+    end
 ```
-1. Sequential (Pipeline)     2. Hierarchical        3. Peer-to-Peer
-   A → B → C → D               Manager              A ↔ B
-                               / | \\                 ↕   ↕
-                              W1 W2 W3               C ↔ D
 
-4. Broadcast               5. Blackboard
-   A → [B, C, D]              A ─┐
-       (all receive)           B ─┤→ [Shared State] → Reader
-                               C ─┘
+```mermaid
+graph TD
+    subgraph "2. Hierarchical"
+        M["Manager"] --> W1["W1"]
+        M --> W2["W2"]
+        M --> W3["W3"]
+    end
+```
+
+```mermaid
+graph LR
+    subgraph "3. Peer-to-Peer"
+        A3["A"] <--> B3["B"]
+        A3 <--> C3["C"]
+        B3 <--> D3["D"]
+        C3 <--> D3
+    end
+```
+
+```mermaid
+graph LR
+    subgraph "4. Broadcast"
+        A4["A"] --> B4["B"]
+        A4 --> C4["C"]
+        A4 --> D4["D"]
+    end
+```
+
+```mermaid
+graph LR
+    subgraph "5. Blackboard"
+        A5["A"] --> SS["Shared State"]
+        B5["B"] --> SS
+        C5["C"] --> SS
+        SS --> R["Reader"]
+    end
 ```
 
 ### Key Design Decisions
@@ -1224,18 +1266,12 @@ Multi-agent systems shine in scenarios where **diverse expertise, adversarial va
 
 A multi-agent code review system uses specialized agents for different concerns:
 
-```
-┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐
-│ Security │  │  Style   │  │   Perf   │  │  Logic   │
-│  Agent   │  │  Agent   │  │  Agent   │  │  Agent   │
-└────┬─────┘  └────┬─────┘  └────┬─────┘  └────┬─────┘
-     └──────────────┴──────────────┴──────────────┘
-                            │
-                    ┌───────▼───────┐
-                    │   Aggregator  │
-                    │   (Dedupes &  │
-                    │    ranks)     │
-                    └───────────────┘
+```mermaid
+graph TD
+    Sec["Security Agent"] --> Agg["Aggregator<br/>(Dedupes & ranks)"]
+    Sty["Style Agent"] --> Agg
+    Perf["Perf Agent"] --> Agg
+    Logic["Logic Agent"] --> Agg
 ```
 
 Each agent reviews the same diff but focuses on its specialty. The aggregator deduplicates overlapping concerns and prioritizes the most critical issues.
@@ -1290,9 +1326,10 @@ Frameworks like **ChatDev** and **MetaGPT** implement this pattern, demonstratin
 
 ### A2A vs MCP
 
-```
-MCP:  Agent ←→ Tool/Data Source    (agent uses tools)
-A2A:  Agent ←→ Agent               (agents collaborate)
+```mermaid
+graph LR
+    MCP["MCP: Agent"] <--> Tool["Tool/Data Source"]
+    A2A["A2A: Agent"] <--> Agent2["Agent"]
 ```
 
 | Aspect | MCP (Anthropic) | A2A (Google) |
@@ -1332,17 +1369,16 @@ Every A2A agent publishes an **Agent Card** — a JSON document at `/.well-known
 
 A2A uses a **task-based communication model**:
 
-```
-[Client Agent]                    [Remote Agent]
-      │                                 │
-      │──── Create Task ───────────────▶│
-      │◀─── Status: submitted ─────────│
-      │                                 │
-      │◀─── Status: working ───────────│
-      │◀─── (streaming artifacts) ─────│
-      │                                 │
-      │◀─── Status: completed ─────────│
-      │◀─── Final Artifacts ───────────│
+```mermaid
+sequenceDiagram
+    participant C as Client Agent
+    participant R as Remote Agent
+    C->>R: Create Task
+    R-->>C: Status: submitted
+    R-->>C: Status: working
+    R-->>C: (streaming artifacts)
+    R-->>C: Status: completed
+    R-->>C: Final Artifacts
 ```
 
 Task states: `submitted` → `working` → `completed` (or `failed`, `canceled`)

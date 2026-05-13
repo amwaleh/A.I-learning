@@ -173,14 +173,16 @@ Parallel sampling generates **multiple independent solutions** to the same probl
 
 **Majority Voting (Self-Consistency)** — Sample N responses, extract answers, take the majority vote:
 
-```
-                    ┌─── Sample 1 ──→ Answer: 42 ─┐
-                    │                               │
-     Prompt ────────┼─── Sample 2 ──→ Answer: 42 ──┼──→ Majority: 42 ✓
-                    │                               │
-                    ├─── Sample 3 ──→ Answer: 37 ──┤
-                    │                               │
-                    └─── Sample 4 ──→ Answer: 42 ──┘
+```mermaid
+graph LR
+    P[Prompt] --> S1["Sample 1 → Answer: 42"]
+    P --> S2["Sample 2 → Answer: 42"]
+    P --> S3["Sample 3 → Answer: 37"]
+    P --> S4["Sample 4 → Answer: 42"]
+    S1 --> M["Majority: 42 ✓"]
+    S2 --> M
+    S3 --> M
+    S4 --> M
 ```
 
 Introduced by Wang et al. (2022), self-consistency decoding marginalizes over reasoning paths to find the most consistent answer. It requires no additional training — only multiple samples from the same model with temperature > 0.
@@ -229,13 +231,11 @@ Sequential sampling uses **iterative refinement** where each generation step bui
 
 **Critique-Then-Revise** — Generate an initial answer, critique it, then produce a revised answer:
 
-```
-┌─────────────┐     ┌──────────────┐     ┌─────────────┐
-│  Generate   │────→│   Critique   │────→│   Revise    │
-│  Draft v1   │     │  Find flaws  │     │  Draft v2   │
-└─────────────┘     └──────────────┘     └─────────────┘
-                           │                     │
-                           └────── Repeat ───────┘
+```mermaid
+graph LR
+    A["Generate\nDraft v1"] --> B["Critique\nFind flaws"]
+    B --> C["Revise\nDraft v2"]
+    C -->|Repeat| B
 ```
 
 ```python
@@ -298,18 +298,19 @@ Tree of Thoughts (Yao et al., 2023) extends chain-of-thought by exploring **mult
 
 ### Tree Structure
 
-```
-                        [Problem]
-                       /    |    \\
-                    /       |       \\
-               [Step A₁]  [Step A₂]  [Step A₃]
-               /    \\       |         |
-            /        \\      |         |
-      [Step B₁] [Step B₂] [Step B₃] [Step B₄]
-         |         ✗        |         ✗
-      [Step C₁]          [Step C₂]
-         |                  |
-      [Answer₁]          [Answer₂] ← Best
+```mermaid
+graph TD
+    P["Problem"] --> A1["Step A₁"]
+    P --> A2["Step A₂"]
+    P --> A3["Step A₃"]
+    A1 --> B1["Step B₁"]
+    A1 --> B2["Step B₂ ✗"]
+    A2 --> B3["Step B₃"]
+    A3 --> B4["Step B₄ ✗"]
+    B1 --> C1["Step C₁"]
+    B3 --> C2["Step C₂"]
+    C1 --> Ans1["Answer₁"]
+    C2 --> Ans2["Answer₂ ← Best"]
 ```
 
 Each branching point generates **multiple candidate next steps**. An evaluation function scores partial solutions, and unpromising branches (✗) are pruned.
@@ -436,20 +437,13 @@ Inference-time techniques (CoT, ToT, search) are powerful but costly — they mu
 
 Training-time reasoning improvements rely on two complementary approaches:
 
-```
-┌──────────────────────────────────────────────────┐
-│           Training-time Techniques               │
-├─────────────────────┬────────────────────────────┤
-│   Supervised (SFT)  │  Reinforcement Learning    │
-├─────────────────────┼────────────────────────────┤
-│ • Curated reasoning │ • RLHF / RLAIF             │
-│   datasets          │ • Process rewards           │
-│ • Step-by-step      │ • Outcome rewards           │
-│   demonstrations    │ • Self-play / self-improve  │
-│ • Distillation from │ • GRPO, PPO, DPO            │
-│   stronger models   │ • Verifier-guided training  │
-└─────────────────────┴────────────────────────────┘
-```
+| Supervised (SFT) | Reinforcement Learning |
+|---|---|
+| Curated reasoning datasets | RLHF / RLAIF |
+| Step-by-step demonstrations | Process rewards / Outcome rewards |
+| Distillation from stronger models | Self-play / self-improve |
+| | GRPO, PPO, DPO |
+| | Verifier-guided training |
 
 ### The Training Pipeline
 
@@ -579,18 +573,11 @@ Process rewards provide **denser gradients**, helping the model learn *which ste
 
 ### Online RL Training Loop
 
-```
-┌───────────────────────────────────────────────┐
-│                 RL Training Loop               │
-│                                                │
-│  ┌─────────┐    ┌──────────┐    ┌──────────┐  │
-│  │ Sample   │───→│ Verify   │───→│ Update   │  │
-│  │ problems │    │ solutions│    │ policy   │  │
-│  └─────────┘    └──────────┘    └──────────┘  │
-│       ↑                               │        │
-│       └───────────────────────────────┘        │
-│              Repeat for K iterations           │
-└───────────────────────────────────────────────┘
+```mermaid
+graph LR
+    A["Sample\nproblems"] --> B["Verify\nsolutions"]
+    B --> C["Update\npolicy"]
+    C -->|Repeat for K iterations| A
 ```
 
 ### Emergent Behaviors
@@ -670,8 +657,12 @@ Example of reward hacking:
 
 Typically, a reward model is a language model with the final unembedding layer replaced by a scalar head:
 
-```
-Input tokens → Transformer → [CLS] embedding → Linear → Scalar reward
+```mermaid
+graph LR
+    A["Input tokens"] --> B["Transformer"]
+    B --> C["[CLS] embedding"]
+    C --> D["Linear"]
+    D --> E["Scalar reward"]
 ```
 
 The model shares the base architecture with the policy, enabling it to understand the same distribution of text. Training usually starts from the SFT checkpoint for better initialization.
@@ -688,18 +679,13 @@ Self-refinement techniques enable models to **improve themselves** by generating
 
 STaR (Zelikman et al., 2022) is the foundational self-refinement algorithm:
 
-```
-┌──────────────────────────────────────────────────┐
-│              STaR Algorithm                       │
-│                                                   │
-│  1. Generate rationales for training problems     │
-│  2. Filter: keep only those leading to correct    │
-│     answers                                       │
-│  3. For failed problems, provide the answer as    │
-│     a hint and re-generate (rationalization)      │
-│  4. Fine-tune model on successful rationales      │
-│  5. Repeat from step 1 with the improved model    │
-└──────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    A["1. Generate rationales\nfor training problems"] --> B["2. Filter: keep only those\nleading to correct answers"]
+    B --> C["3. For failed problems, provide\nanswer as hint and re-generate"]
+    C --> D["4. Fine-tune model on\nsuccessful rationales"]
+    D --> E["5. Repeat from step 1\nwith the improved model"]
+    E --> A
 ```
 
 ```python

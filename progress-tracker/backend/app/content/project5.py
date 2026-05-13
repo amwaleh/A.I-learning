@@ -95,17 +95,15 @@ The architecture of a diffusion model defines how it processes noisy inputs and 
 
 Instead of diffusing in pixel space (expensive at high resolutions), **Latent Diffusion Models** first encode images into a compressed latent space using a pre-trained VAE:
 
-```
-Architecture Overview:
-┌─────────────┐     ┌──────────────┐     ┌─────────────┐
-│  Text Prompt │────▶│ Text Encoder │────▶│  Cross-Attn  │
-└─────────────┘     │ (CLIP / T5)  │     │  Conditioning│
-                    └──────────────┘     └──────┬──────┘
-                                                │
-┌─────────┐    ┌──────┐    ┌────────────────────▼───┐    ┌──────┐    ┌─────────┐
-│  Image  │───▶│  VAE │───▶│   U-Net / DiT Backbone │───▶│  VAE │───▶│  Output │
-│ (or z_T)│    │Encode│    │   (Denoising Network)  │    │Decode│    │  Image  │
-└─────────┘    └──────┘    └────────────────────────┘    └──────┘    └─────────┘
+```mermaid
+graph LR
+    A[Text Prompt] --> B[Text Encoder<br>CLIP / T5]
+    B --> C[Cross-Attn<br>Conditioning]
+    D[Image or z_T] --> E[VAE Encode]
+    E --> F[U-Net / DiT Backbone<br>Denoising Network]
+    C --> F
+    F --> G[VAE Decode]
+    G --> H[Output Image]
 ```
 
 The latent space is typically **8× downsampled** (a 512×512 image becomes 64×64×4 latents), making diffusion computationally tractable.
@@ -221,18 +219,15 @@ DDIM:   50 steps, deterministic → good quality, fast, reproducible
 
 Viewing diffusion as solving an **ordinary differential equation (ODE)**, DPM-Solver applies higher-order numerical methods. DPM-Solver++ achieves excellent quality in **15-25 steps**, making it a popular default:
 
-```
 Step comparison (512×512 image):
-┌──────────────┬───────┬──────────┬─────────┐
-│ Sampler      │ Steps │ Time (s) │ Quality │
-├──────────────┼───────┼──────────┼─────────┤
-│ DDPM         │ 1000  │ ~60      │ ★★★★★  │
-│ DDIM         │  50   │ ~3       │ ★★★★   │
-│ DPM-Solver++ │  20   │ ~1.2     │ ★★★★★  │
-│ Euler        │  25   │ ~1.5     │ ★★★★   │
-│ Euler a      │  25   │ ~1.5     │ ★★★★   │
-└──────────────┴───────┴──────────┴─────────┘
-```
+
+| Sampler | Steps | Time (s) | Quality |
+|---------|-------|----------|---------|
+| DDPM | 1000 | ~60 | ★★★★★ |
+| DDIM | 50 | ~3 | ★★★★ |
+| DPM-Solver++ | 20 | ~1.2 | ★★★★★ |
+| Euler | 25 | ~1.5 | ★★★★ |
+| Euler a | 25 | ~1.5 | ★★★★ |
 
 ### Euler and Karras Schedulers
 
@@ -289,16 +284,11 @@ Models like **LAION Aesthetic Predictor** are trained on human aesthetic ratings
 
 Automated metrics correlate imperfectly with human judgment. **ImageReward** trains a reward model on human preference data (pairwise comparisons of images for the same prompt). It captures nuanced quality dimensions that FID and CLIP miss:
 
-```
-Evaluation Dimension Pipeline:
-┌────────────┐   ┌────────────┐   ┌───────────────┐
-│  Fidelity  │ + │  Alignment │ + │  Aesthetics   │
-│   (FID)    │   │(CLIP Score)│   │ (Human Pref)  │
-└────────────┘   └────────────┘   └───────────────┘
-         ↘            ↓            ↙
-         ┌────────────────────────┐
-         │   Overall Model Score  │
-         └────────────────────────┘
+```mermaid
+graph TD
+    A[Fidelity<br>FID] --> D[Overall Model Score]
+    B[Alignment<br>CLIP Score] --> D
+    C[Aesthetics<br>Human Pref] --> D
 ```
 
 ### GenAI-Bench
@@ -322,15 +312,18 @@ Video generation is fundamentally harder than image generation for several reaso
 ```
 Image: Generate 1 frame     → ~1M pixels (512×512×3)
 Video: Generate 120 frames  → ~120M pixels (512×512×3×120)
+```
 
-Challenges:
-┌──────────────────────────────────────────────┐
-│ 1. Temporal consistency (no flickering)      │
-│ 2. Motion coherence (physics-aware movement) │
-│ 3. Compute: ~100-1000× more than images     │
-│ 4. Training data: high-quality video+text    │
-│ 5. Evaluation: no standard metrics yet       │
-└──────────────────────────────────────────────┘
+**Challenges:**
+
+```mermaid
+graph TD
+    A[Video Generation Challenges]
+    A --> B[1. Temporal consistency - no flickering]
+    A --> C[2. Motion coherence - physics-aware movement]
+    A --> D[3. Compute: ~100-1000× more than images]
+    A --> E[4. Training data: high-quality video+text]
+    A --> F[5. Evaluation: no standard metrics yet]
 ```
 
 A single inconsistent frame is immediately noticeable in video, making temporal coherence the primary technical challenge. Objects must maintain identity, lighting must stay consistent, and motion must follow plausible physics.
@@ -397,11 +390,14 @@ A **causal 3D VAE** (used in CogVideoX, HunyuanVideo) processes frames in tempor
 ```
 Causal processing: frame_t depends on [frame_0, ..., frame_t]
                    (not frame_{t+1}, frame_{t+2}, ...)
+```
 
-Benefits:
-├── Streaming / autoregressive generation
-├── Variable-length video support
-└── Consistent with how video is consumed
+```mermaid
+graph TD
+    A[Causal 3D VAE Benefits]
+    A --> B[Streaming / autoregressive generation]
+    A --> C[Variable-length video support]
+    A --> D[Consistent with how video is consumed]
 ```
 
 ### Training the Video VAE
@@ -429,14 +425,12 @@ Large-scale video-text datasets are harder to curate than image-text pairs. Comm
 
 Raw video captions (from metadata, ASR, or alt-text) are typically poor quality. Modern pipelines use **video captioning models** to generate detailed descriptions:
 
+```mermaid
+graph LR
+    A[Raw Video<br>+ weak text] --> B[Video Captioning Model<br>e.g. InternVL, GPT-4V] --> C[Detailed Temporal<br>Description]
 ```
-Pipeline for high-quality video captions:
-┌────────────────┐    ┌──────────────────┐    ┌────────────────┐
-│  Raw Video     │───▶│ Video Captioning │───▶│ Detailed       │
-│  + weak text   │    │ Model (e.g.,     │    │ Temporal       │
-│                │    │ InternVL, GPT-4V)│    │ Description    │
-└────────────────┘    └──────────────────┘    └────────────────┘
 
+```
 Example output:
 "A woman in a red dress walks along a sunlit beach,
  the camera slowly panning right as waves gently
@@ -480,18 +474,20 @@ The **Diffusion Transformer (DiT)** replaces the traditional U-Net backbone with
 
 ### Why Replace U-Net with Transformer?
 
-```
-U-Net Limitations:
-├── Fixed spatial structure (encoder-decoder)
-├── Skip connections create architecture rigidity
-├── Scaling is ad-hoc (wider? deeper? more attention?)
-└── Temporal extension feels bolted-on (insert temporal layers)
-
-DiT Advantages:
-├── Uniform architecture (just transformer blocks)
-├── Proven scaling laws (loss decreases predictably)
-├── Native sequence modeling (space AND time as tokens)
-└── Flexible input: variable resolution, variable duration
+```mermaid
+graph TD
+    subgraph UNet["U-Net Limitations"]
+        U1[Fixed spatial structure<br>encoder-decoder]
+        U2[Skip connections create<br>architecture rigidity]
+        U3[Scaling is ad-hoc<br>wider? deeper? more attention?]
+        U4[Temporal extension feels<br>bolted-on]
+    end
+    subgraph DiT["DiT Advantages"]
+        D1[Uniform architecture<br>just transformer blocks]
+        D2[Proven scaling laws<br>loss decreases predictably]
+        D3[Native sequence modeling<br>space AND time as tokens]
+        D4[Flexible input<br>variable resolution and duration]
+    end
 ```
 
 ### Patchification: Video to Tokens
@@ -539,17 +535,15 @@ Training a state-of-the-art video generation model requires enormous compute res
 
 ### Compute Requirements
 
-```
 Approximate GPU-hours for training video generation models:
-┌─────────────────────────┬────────────────────┬──────────────┐
-│ Model Scale             │ Parameters         │ GPU-Hours    │
-├─────────────────────────┼────────────────────┼──────────────┤
-│ Research prototype      │ 500M - 1B          │ ~10K         │
-│ Production quality      │ 2B - 5B            │ ~100K        │
-│ Frontier (Sora-class)   │ 5B - 30B+          │ ~500K-1M+    │
-└─────────────────────────┴────────────────────┴──────────────┘
-(GPU-hours measured on A100/H100 equivalents)
-```
+
+| Model Scale | Parameters | GPU-Hours |
+|-------------|-----------|-----------|
+| Research prototype | 500M - 1B | ~10K |
+| Production quality | 2B - 5B | ~100K |
+| Frontier (Sora-class) | 5B - 30B+ | ~500K-1M+ |
+
+*(GPU-hours measured on A100/H100 equivalents)*
 
 ### Distributed Training Strategies
 
@@ -596,50 +590,16 @@ A production text-to-video system is far more than just a diffusion model. It is
 
 ### Full Pipeline Diagram
 
-```
-User Prompt
-    │
-    ▼
-┌──────────────────────────┐
-│  1. Prompt Enhancement   │  LLM rewrites short prompts into
-│     (LLM Rewrite)       │  detailed, cinematic descriptions
-└──────────┬───────────────┘
-           │  "A cat sitting" → "A fluffy orange tabby cat sits
-           │   on a sunlit windowsill, soft bokeh background,
-           │   gentle breeze moves the curtains, 4K cinematic"
-           ▼
-┌──────────────────────────┐
-│  2. Text Encoding        │  CLIP + T5-XXL encode the enhanced
-│     (CLIP + T5)         │  prompt into conditioning embeddings
-└──────────┬───────────────┘
-           ▼
-┌──────────────────────────┐
-│  3. T2V Base Generation  │  DiT denoises latents conditioned
-│     (DiT Diffusion)     │  on text → low-res base video
-│     e.g., 480p, 24fps   │  (typically 20-50 diffusion steps)
-└──────────┬───────────────┘
-           ▼
-┌──────────────────────────┐
-│  4. Video VAE Decode     │  Decode latents to pixel space
-│     (3D VAE Decoder)    │
-└──────────┬───────────────┘
-           ▼
-┌──────────────────────────┐
-│  5. Spatial Super-Res    │  Upscale from 480p → 1080p/4K
-│     (Upscaling Model)   │  using a separate diffusion model
-└──────────┬───────────────┘
-           ▼
-┌──────────────────────────┐
-│  6. Frame Interpolation  │  Increase FPS: 8fps → 24fps
-│     (RIFE / FILM)       │  by synthesizing intermediate frames
-└──────────┬───────────────┘
-           ▼
-┌──────────────────────────┐
-│  7. Post-Processing      │  Color correction, watermark,
-│     & Safety Filter     │  NSFW check, encoding (H.264)
-└──────────┬───────────────┘
-           ▼
-     Final Video Output
+```mermaid
+graph TD
+    A[User Prompt] --> B[1. Prompt Enhancement<br>LLM Rewrite]
+    B --> C[2. Text Encoding<br>CLIP + T5]
+    C --> D[3. T2V Base Generation<br>DiT Diffusion, e.g. 480p 24fps]
+    D --> E[4. Video VAE Decode<br>3D VAE Decoder]
+    E --> F[5. Spatial Super-Res<br>Upscaling Model, 480p to 1080p/4K]
+    F --> G[6. Frame Interpolation<br>RIFE / FILM, 8fps to 24fps]
+    G --> H[7. Post-Processing<br>& Safety Filter]
+    H --> I[Final Video Output]
 ```
 
 ### Component Details
