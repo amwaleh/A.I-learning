@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { X, Loader2 } from 'lucide-react';
+import { X, Loader2, PartyPopper } from 'lucide-react';
 import client from '../api/client';
 import MermaidBlock from './MermaidBlock';
 import CheckpointButton from './CheckpointButton';
@@ -13,6 +13,7 @@ export default function TopicContent({ topicId, topicTitle, onClose, fullHeight 
   const [loading, setLoading] = useState(true);
   const [checkpoints, setCheckpoints] = useState([]);
   const [status, setStatus] = useState('not_started');
+  const [showCompleted, setShowCompleted] = useState(false);
   const { scrollPercent, timeSpent, containerRef, reset } = useScrollProgress();
   const lastReportedRef = useRef({ scroll: 0, time: 0 });
 
@@ -39,6 +40,21 @@ export default function TopicContent({ topicId, topicTitle, onClose, fullHeight 
     fetchData();
   }, [topicId, reset]);
 
+  // Handle status transition — show celebration before notifying parent
+  const handleStatusTransition = useCallback((newStatus) => {
+    if (newStatus === status) return;
+    setStatus(newStatus);
+    if (newStatus === 'completed') {
+      setShowCompleted(true);
+      // Notify parent after user sees the confirmation (3s)
+      setTimeout(() => {
+        onStatusChange?.(topicId, newStatus);
+      }, 3000);
+    } else {
+      onStatusChange?.(topicId, newStatus);
+    }
+  }, [status, topicId, onStatusChange]);
+
   // Auto-progress reporting (debounced — every 10% scroll or 10s)
   useEffect(() => {
     if (status === 'completed' || loading) return;
@@ -55,12 +71,9 @@ export default function TopicContent({ topicId, topicTitle, onClose, fullHeight 
       scroll_percent: scrollPercent,
       time_spent: timeSpent,
     }).then((res) => {
-      if (res.data.status !== status) {
-        setStatus(res.data.status);
-        onStatusChange?.(topicId, res.data.status);
-      }
+      handleStatusTransition(res.data.status);
     }).catch(() => {});
-  }, [scrollPercent, timeSpent, topicId, status, loading, onStatusChange]);
+  }, [scrollPercent, timeSpent, topicId, status, loading, handleStatusTransition]);
 
   const handleCheckpointConfirm = useCallback((cpNumber) => {
     setCheckpoints(prev =>
@@ -71,12 +84,9 @@ export default function TopicContent({ topicId, topicTitle, onClose, fullHeight 
       scroll_percent: scrollPercent,
       time_spent: timeSpent,
     }).then((res) => {
-      if (res.data.status !== status) {
-        setStatus(res.data.status);
-        onStatusChange?.(topicId, res.data.status);
-      }
+      handleStatusTransition(res.data.status);
     }).catch(() => {});
-  }, [topicId, scrollPercent, timeSpent, status, onStatusChange]);
+  }, [topicId, scrollPercent, timeSpent, handleStatusTransition]);
 
   // Parse checkpoint markers from content
   const renderContent = (rawContent) => {
@@ -91,7 +101,7 @@ export default function TopicContent({ topicId, topicTitle, onClose, fullHeight 
   const confirmedCount = checkpoints.filter(cp => cp.confirmed).length;
 
   return (
-    <div className={`bg-slate-900/60 border border-slate-800 rounded-xl flex flex-col
+    <div className={`bg-slate-900/60 border border-slate-800 rounded-xl flex flex-col relative
                      ${fullHeight ? 'h-full' : 'card mt-4'}`}>
       {/* Sticky header */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 flex-shrink-0">
@@ -182,6 +192,22 @@ export default function TopicContent({ topicId, topicTitle, onClose, fullHeight 
           checkpointsConfirmed={confirmedCount}
           status={status}
         />
+      )}
+
+      {/* Completion overlay */}
+      {showCompleted && (
+        <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm rounded-xl flex items-center justify-center z-10 animate-fade-in">
+          <div className="text-center space-y-3">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-emerald-500/20 mb-2">
+              <PartyPopper className="w-8 h-8 text-emerald-400" />
+            </div>
+            <h3 className="text-xl font-bold text-emerald-300">Topic Completed!</h3>
+            <p className="text-slate-400 text-sm">Moving to next topic...</p>
+            <div className="w-32 mx-auto h-1 bg-slate-800 rounded-full overflow-hidden mt-4">
+              <div className="h-full bg-emerald-500 rounded-full animate-progress-bar" />
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
